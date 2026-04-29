@@ -728,45 +728,29 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 <script>
 
 // ══════════════════════════════════════════════════════════
-// GITHUB JSON STORAGE
+// SUPABASE
 // ══════════════════════════════════════════════════════════
-const GH_TOKEN  = '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';
-const GH_OWNER  = 'martimsf';
-const GH_REPO   = 'cm-finance-data';
-const GH_BRANCH = 'main';
+const SB_URL = 'https://zltpscoxwfiwcbnfvnec.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsdHBzY294d2Zpd2NibmZ2bmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODg5NzMsImV4cCI6MjA4ODI2NDk3M30._6EfTQLwyptYt1PzJHV0mJfYCDZemkLBcB9rl6uzfgk';
 
-async function ghRead(path) {
-  const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}&t=${Date.now()}`, {
-    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+async function sbFetch(method, table, body=null, params='') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}${params}`, {
+    method,
+    headers: {
+      'Content-Type':'application/json',
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Prefer': method==='POST' ? 'resolution=merge-duplicates,return=minimal' : ''
+    },
+    body: body ? JSON.stringify(body) : null
   });
-  if (r.status === 404) return { content: null, sha: null };
-  if (!r.ok) throw new Error('GH read failed: ' + r.status);
-  const j = await r.json();
-  return { content: JSON.parse(atob(j.content.replace(/\n/g,''))), sha: j.sha };
+  if (!r.ok) throw new Error(await r.text());
+  if (method==='DELETE') return null;
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
 }
 
-async function ghWrite(path, content, sha) {
-  const body = {
-    message: `update ${path}`,
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
-    branch: GH_BRANCH
-  };
-  if (sha) body.sha = sha;
-  const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
-    method: 'PUT',
-    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error('GH write failed: ' + err);
-  }
-  const j = await r.json();
-  return j.content.sha;
-}
-
-function dbPath(section) { return `${DB}/${section}.json`; }
-const _sha = {};
+function tbl(name) { return `${DB}_${name}`; }
 
 // ══════════════════════════════════════════════════════════
 // DASHBOARD CONFIG — 3 dashboards, each with own tables/categories/budget
@@ -874,84 +858,61 @@ function setLoading(on, msg='Loading…') {
 }
 
 // ══════════════════════════════════════════════════════════
-// GITHUB CRUD LAYER
+// SUPABASE CRUD
 // ══════════════════════════════════════════════════════════
 
 async function loadS() {
   setLoading(true, 'Loading ' + getDBCfg().label + '…');
   try {
-    const [txnR, goalR, accR, budR] = await Promise.all([
-      ghRead(dbPath('transactions')),
-      ghRead(dbPath('goals')),
-      ghRead(dbPath('accounts')),
-      ghRead(dbPath('budget'))
+    const [txns, goals, accs, settings] = await Promise.all([
+      sbFetch('GET', tbl('transactions'), null, '?order=date.desc'),
+      sbFetch('GET', tbl('goals'), null, ''),
+      sbFetch('GET', tbl('accounts'), null, '?order=date.asc'),
+      sbFetch('GET', tbl('settings'), null, '?key=eq.budget')
     ]);
-
-    S.transactions = txnR.content || [];
-    _sha[dbPath('transactions')] = txnR.sha;
-
-    S.goals = goalR.content || [];
-    _sha[dbPath('goals')] = goalR.sha;
-
-    // Accounts stored as { name: [{date, balance}] }
-    const rawAccs = accR.content || {};
-    S.accounts = rawAccs;
-    _sha[dbPath('accounts')] = accR.sha;
-
-    S.budget = budR.content || null;
-    _sha[dbPath('budget')] = budR.sha;
-
+    S.transactions = txns || [];
+    S.goals = goals || [];
+    S.accounts = {};
+    (accs||[]).forEach(a => {
+      if (!S.accounts[a.name]) S.accounts[a.name] = [];
+      S.accounts[a.name].push({ date: a.date, balance: parseFloat(a.balance), dbId: a.id });
+    });
+    S.budget = settings?.[0]?.value || null;
   } catch(e) {
-    toast('⚠ Could not load data: ' + e.message);
+    toast('⚠ Could not connect to database: ' + e.message);
     console.error(e);
   }
   setLoading(false);
 }
 
 async function saveTxn(t) {
-  // Upsert: replace existing by id or push new
-  const idx = S.transactions.findIndex(x => x.id === t.id);
-  if (idx >= 0) S.transactions[idx] = t; else S.transactions.unshift(t);
-  _sha[dbPath('transactions')] = await ghWrite(
-    dbPath('transactions'), S.transactions, _sha[dbPath('transactions')] || null
-  );
+  const row = {
+    id: t.id, date: t.date, description: t.description||'',
+    amount: t.amount, type: t.type, category: t.category||'',
+    subcategory: t.subcategory||'', person: t.person||null,
+    ignored: t.ignored||false
+  };
+  await sbFetch('POST', tbl('transactions'), row, '?on_conflict=id');
 }
 
 async function deleteTxn(id) {
-  S.transactions = S.transactions.filter(t => t.id !== id);
-  _sha[dbPath('transactions')] = await ghWrite(
-    dbPath('transactions'), S.transactions, _sha[dbPath('transactions')] || null
-  );
+  await sbFetch('DELETE', tbl('transactions'), null, `?id=eq.${id}`);
 }
 
 async function saveGoalDB(g) {
-  const idx = S.goals.findIndex(x => x.id === g.id);
-  if (idx >= 0) S.goals[idx] = g; else S.goals.push(g);
-  _sha[dbPath('goals')] = await ghWrite(
-    dbPath('goals'), S.goals, _sha[dbPath('goals')] || null
-  );
+  await sbFetch('POST', tbl('goals'), {id:g.id,name:g.name,type:g.type,target:g.target,current:g.current,target_date:g.targetDate||null}, '?on_conflict=id');
 }
 
 async function deleteGoalDB(id) {
-  S.goals = S.goals.filter(g => g.id !== id);
-  _sha[dbPath('goals')] = await ghWrite(
-    dbPath('goals'), S.goals, _sha[dbPath('goals')] || null
-  );
+  await sbFetch('DELETE', tbl('goals'), null, `?id=eq.${id}`);
 }
 
 async function saveAccountDB(name, balance, date) {
-  if (!S.accounts[name]) S.accounts[name] = [];
-  S.accounts[name].push({ date, balance: parseFloat(balance) });
-  _sha[dbPath('accounts')] = await ghWrite(
-    dbPath('accounts'), S.accounts, _sha[dbPath('accounts')] || null
-  );
+  await sbFetch('POST', tbl('accounts'), {name, balance, date}, '');
 }
 
 async function saveBudgetDB(b) {
-  S.budget = b;
-  _sha[dbPath('budget')] = await ghWrite(
-    dbPath('budget'), b, _sha[dbPath('budget')] || null
-  );
+  await sbFetch('POST', tbl('settings'), {key:'budget', value:b}, '?on_conflict=key');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1375,43 +1336,24 @@ function updImpSub(i) {
 async function confirmImport() {
   const rows = [...pending]; pending = [];
   closeM('import');
-  setLoading(true, 'Saving ' + rows.length + ' transactions…');
+  setLoading(true, 'Importing ' + rows.length + ' transactions…');
   try {
-    // Build all new txns in memory first
-    const newTxns = rows.map((row, i) => {
+    // Deduplicate against existing
+    const dupeKey = t => `${t.date}|${t.description}|${t.amount}`;
+    const existingKeys = new Set(S.transactions.map(dupeKey));
+    let n = 0, skipped = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       const cat = document.getElementById(`ic-c-${i}`)?.value || row.category;
       const sub = document.getElementById(`ic-s-${i}`)?.value || row.subcategory;
-      return {
-        id: Date.now() + i,
-        date: row.date,
-        amount: row.amount,
-        description: row.description,
-        type: row._type,
-        category: cat,
-        subcategory: sub,
-        person: null,
-        ignored: false
-      };
-    });
-
-    // Merge with existing — deduplicate by date+description+amount
-    const existing = S.transactions;
-    const dupeKey = t => `${t.date}|${t.description}|${t.amount}`;
-    const existingKeys = new Set(existing.map(dupeKey));
-    const toAdd = newTxns.filter(t => !existingKeys.has(dupeKey(t)));
-
-    if (toAdd.length === 0) {
-      toast('⚠ All transactions already exist — nothing imported');
-      setLoading(false); return;
+      const txn = { id: Date.now()+i, date: row.date, amount: row.amount, description: row.description, type: row._type, category: cat, subcategory: sub, person: null, ignored: false };
+      if (existingKeys.has(dupeKey(txn))) { skipped++; continue; }
+      await saveTxn(txn);
+      S.transactions.unshift(txn);
+      n++;
     }
-
-    // Single write to GitHub
-    S.transactions = [...toAdd, ...existing].sort((a,b) => new Date(b.date) - new Date(a.date));
-    _sha[dbPath('transactions')] = await ghWrite(
-      dbPath('transactions'), S.transactions, _sha[dbPath('transactions')] || null
-    );
-
-    toast(`✓ Imported ${toAdd.length} transaction(s)${newTxns.length - toAdd.length > 0 ? ' (' + (newTxns.length - toAdd.length) + ' duplicates skipped)' : ''}`);
+    S.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+    toast(`✓ Imported ${n}${skipped ? ' (' + skipped + ' duplicates skipped)' : ''}`);
     renderOv(); renderTxn(); renderPnL();
   } catch(e) {
     console.error('Import error:', e);
@@ -1923,8 +1865,8 @@ function clearF(){
 async function delTxn(id){
   if(!confirm('Delete this transaction permanently?')) return;
   try {
+    await deleteTxn(id);
     S.transactions = S.transactions.filter(t=>t.id!==id);
-    _sha[dbPath('transactions')] = await ghWrite(dbPath('transactions'), S.transactions, _sha[dbPath('transactions')]||null);
     filterTxn(); renderOv(); renderPnL(); toast('✓ Deleted');
   } catch(e){ toast('⚠ Delete failed: '+e.message); }
 }
@@ -1932,7 +1874,7 @@ async function toggleIgnore(id){
   const t=S.transactions.find(x=>x.id===id); if(!t) return;
   t.ignored=!t.ignored;
   try {
-    _sha[dbPath('transactions')] = await ghWrite(dbPath('transactions'), S.transactions, _sha[dbPath('transactions')]||null);
+    await saveTxn(t);
     filterTxn(); renderOv(); renderPnL();
     toast(t.ignored?'⊘ Ignored':'↩ Restored');
   } catch(e){ t.ignored=!t.ignored; toast('⚠ Save failed: '+e.message); }
