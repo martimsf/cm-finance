@@ -1694,40 +1694,41 @@ function renderPnL() {
   const mNet = mInc.map((v,i)=>v-mExp[i]);
 
   const MTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const cs = 'padding:6px 8px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;white-space:nowrap';
-  const lcs = 'padding:6px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);min-width:100px';
-  const tcs = 'padding:6px 10px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;font-weight:700;white-space:nowrap;border-left:1px solid var(--border2)';
-
   const budInc = getBudTotalInc(), budExp = getBudTotalExp(), budNet = budInc - budExp;
-  const budCs = 'padding:6px 10px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;color:var(--accent);background:var(--accent)08;white-space:nowrap;min-width:80px';
 
+  // Same table structure as P&L below for visual coherence
   const strip = document.getElementById('pnl-summary-strip');
   if(strip) {
-    strip.innerHTML = `
-    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;border-bottom:2px solid var(--border2);padding-bottom:4px;margin-bottom:4px">
-      <div style="${lcs}">Year ${yr}</div>
-      <div style="${budCs};color:var(--t3);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;justify-content:flex-end">Budget</div>
-      ${MTHS.map(m=>`<div style="padding:4px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em">${m}</div>`).join('')}
-      <div style="padding:4px 10px;text-align:right;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;border-left:1px solid var(--border2)">Total</div>
-    </div>
-    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;margin-bottom:2px">
-      <div style="${lcs};color:var(--green)">Income</div>
-      <div style="${budCs}">${budInc?fmt(budInc):'—'}</div>
-      ${mInc.map(v=>`<div style="${cs};color:${v?'var(--green)':'var(--t3)'}">${v?fmt(v):'—'}</div>`).join('')}
-      <div style="${tcs};color:var(--green)">${ytdInc?fmt(ytdInc):'—'}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;margin-bottom:2px">
-      <div style="${lcs};color:var(--red)">Expenses</div>
-      <div style="${budCs}">${budExp?fmt(budExp):'—'}</div>
-      ${mExp.map(v=>`<div style="${cs};color:${v?'var(--red)':'var(--t3)'}">${v?fmt(v):'—'}</div>`).join('')}
-      <div style="${tcs};color:var(--red)">${ytdExp?fmt(ytdExp):'—'}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;border-top:1px solid var(--border)">
-      <div style="${lcs}">Net</div>
-      <div style="${budCs};color:${budNet>=0?'var(--green)':'var(--red)'}">${fmt(budNet)}</div>
-      ${mNet.map(v=>`<div style="${cs};color:${v>0?'var(--green)':v<0?'var(--red)':'var(--t3)'};font-weight:${v!==0?'700':'400'}">${v?fmt(v):'—'}</div>`).join('')}
-      <div style="${tcs};color:${ytdNet>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(ytdNet)}</div>
-    </div>`;
+    const thS = 'padding:0 10px 12px;font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:var(--t3);font-weight:700;text-align:right;border-bottom:1.5px solid var(--border2);white-space:nowrap';
+    const tdS = 'padding:9px 10px;font-size:13px;border-bottom:1px solid var(--border);text-align:right;font-family:"Nunito Sans",sans-serif;white-space:nowrap';
+    const totS = 'padding:11px 10px;font-size:14.5px;font-weight:600;text-align:right;font-family:"Nunito Sans",sans-serif;border-top:1.5px solid var(--border2);white-space:nowrap;border-left:2px solid var(--border2)';
+    const budS = 'padding:9px 10px;font-size:13px;border-bottom:1px solid var(--border);text-align:right;font-family:"Nunito Sans",sans-serif;color:var(--accent);background:var(--accent)08;white-space:nowrap';
+    const budTotS = 'padding:11px 10px;font-size:14.5px;font-weight:600;text-align:right;font-family:"Nunito Sans",sans-serif;border-top:1.5px solid var(--border2);color:var(--accent);background:var(--accent)08;white-space:nowrap';
+    strip.innerHTML = `<table class="pnl-tbl" style="width:100%"><thead><tr>
+      <th style="text-align:left;padding:0 10px 12px;font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:var(--t3);font-weight:700;border-bottom:1.5px solid var(--border2);min-width:120px">Year ${yr}</th>
+      <th style="${thS};background:var(--accent)08">Budget</th>
+      ${MTHS.map(m=>`<th style="${thS}">${m}</th>`).join('')}
+      <th style="${thS};border-left:2px solid var(--border2)">Total</th>
+    </tr></thead><tbody>
+    <tr class="tot-row" style="border:none">
+      <td style="padding:9px 10px;font-size:13px;font-weight:700;color:var(--green);border-bottom:1px solid var(--border);text-align:left">Income</td>
+      <td style="${budS}">${budInc?fmt(budInc):'—'}</td>
+      ${mInc.map(v=>`<td style="${tdS};color:${v?'var(--green)':'var(--t3)'}">${v?fmt(v):'—'}</td>`).join('')}
+      <td style="${totS};color:var(--green)">${ytdInc?fmt(ytdInc):'—'}</td>
+    </tr>
+    <tr class="tot-row" style="border:none">
+      <td style="padding:9px 10px;font-size:13px;font-weight:700;color:var(--red);border-bottom:1px solid var(--border);text-align:left">Expenses</td>
+      <td style="${budS}">${budExp?fmt(budExp):'—'}</td>
+      ${mExp.map(v=>`<td style="${tdS};color:${v?'var(--red)':'var(--t3)'}">${v?fmt(v):'—'}</td>`).join('')}
+      <td style="${totS};color:var(--red)">${ytdExp?fmt(ytdExp):'—'}</td>
+    </tr>
+    <tr class="tot-row" style="border:none">
+      <td style="padding:11px 10px;font-size:14.5px;font-weight:700;border-top:1.5px solid var(--border2);text-align:left">Net</td>
+      <td style="${budTotS};color:${budNet>=0?'var(--green)':'var(--red)'}">${fmt(budNet)}</td>
+      ${mNet.map(v=>`<td style="${totS};color:${v>0?'var(--green)':v<0?'var(--red)':'var(--t3)'}">${v?fmt(v):'—'}</td>`).join('')}
+      <td style="${totS};color:${ytdNet>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(ytdNet)}</td>
+    </tr>
+    </tbody></table>`;
   }
 
   // Budget view removed — budget now managed in Explore section
