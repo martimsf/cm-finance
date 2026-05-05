@@ -315,6 +315,39 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   .mob-nav { display: none !important; }
 }
 
+
+/* ── CHECKBOX DROPDOWN FILTERS ── */
+.dd-wrap { position:relative; }
+.dd-btn {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px 12px; min-width:120px; background:var(--white);
+  border:1.5px solid var(--border); border-radius:8px; cursor:pointer;
+  font-size:13px; font-family:'Plus Jakarta Sans',sans-serif; color:var(--text);
+  white-space:nowrap; transition:border-color 0.13s;
+}
+.dd-btn:hover { border-color:var(--accent); }
+.dd-btn.active { border-color:var(--accent); color:var(--accent); }
+.dd-arr { font-size:10px; color:var(--t3); transition:transform 0.13s; }
+.dd-btn.active .dd-arr { transform:rotate(180deg); color:var(--accent); }
+.dd-menu {
+  display:none; position:absolute; top:calc(100% + 6px); left:0;
+  background:var(--white); border:1.5px solid var(--border); border-radius:10px;
+  box-shadow:0 8px 24px rgba(79,70,229,0.12); z-index:500;
+  min-width:130px; padding:6px; max-height:280px; overflow-y:auto;
+}
+.dd-menu.open { display:block; }
+.dd-item {
+  display:flex; align-items:center; gap:9px; padding:8px 10px;
+  border-radius:7px; cursor:pointer; font-size:13px; color:var(--t2);
+  font-family:'Plus Jakarta Sans',sans-serif; transition:background 0.1s;
+  user-select:none;
+}
+.dd-item:hover { background:var(--s2); }
+.dd-item input[type=checkbox] {
+  width:15px; height:15px; accent-color:var(--accent);
+  cursor:pointer; flex-shrink:0; margin:0;
+}
+
 </style>
 </head>
 <body>
@@ -440,32 +473,38 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <!-- P&L -->
   <div class="page" id="page-pnl">
     <div class="ph">
-      <div><div class="ptitle">Profit &amp; Loss</div><div class="psub" id="pnl-sub">Actual vs Budget</div></div>
+      <div><div class="ptitle">Profit &amp; Loss</div><div class="psub" id="pnl-sub">Annual View</div></div>
       <div class="ha">
-        <div class="mn">
-          <button class="mna" onclick="pnlChMon(-1)">‹</button>
-          <span class="mnc" id="pnl-mon-d">YTD</span>
-          <button class="mna" onclick="pnlChMon(1)">›</button>
+        <div class="pnl-nav" style="margin:0">
+          <button class="pnl-tab on" onclick="pnlSetView('annual',this)">Annual</button>
+          <button class="pnl-tab" onclick="pnlSetView('budget',this)">Budget</button>
         </div>
       </div>
     </div>
-    <div class="pnl-nav">
-      <button class="pnl-tab on" onclick="pnlSetView('month',this)">Month</button>
-      <button class="pnl-tab" onclick="pnlSetView('budget',this)">Budget</button>
-    </div>
-    <div class="g21">
-      <div class="card" style="overflow-x:auto"><div id="pnl-stmt"><div class="empty"><div class="ei">📋</div>No data yet.</div></div></div>
-      <div>
-        <div class="card" style="margin-bottom:12px">
-          <div class="ct">Summary</div>
-          <div style="margin-bottom:12px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:3px;font-weight:700">Income</div><div style="font-family:'Nunito Sans',sans-serif;font-size:22px;color:var(--green);font-weight:600" id="pnl-i">€0</div><div style="font-size:11.5px;color:var(--t3);margin-top:2px">Budget <span style="font-family:'Nunito Sans',sans-serif" id="pnl-i-bud">—</span></div></div>
-          <div style="margin-bottom:12px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:3px;font-weight:700">Expenses</div><div style="font-family:'Nunito Sans',sans-serif;font-size:22px;color:var(--red);font-weight:600" id="pnl-e">€0</div><div style="font-size:11.5px;color:var(--t3);margin-top:2px">Budget <span style="font-family:'Nunito Sans',sans-serif" id="pnl-e-bud">—</span></div></div>
-          <hr class="divr">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:3px;font-weight:700">Net Result</div>
-          <div style="font-family:'Nunito Sans',sans-serif;font-size:24px;font-weight:700" id="pnl-n">€0</div>
+    <!-- Summary strip -->
+    <div class="card" style="padding:14px 20px;margin-bottom:10px;overflow-x:auto">
+      <div id="pnl-summary-strip" style="min-width:700px">
+        <div style="display:grid;grid-template-columns:160px repeat(12,1fr) 80px;gap:0;align-items:center">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em">
+            <span id="pnl-year-lbl"></span>
+          </div>
+          <div id="pnl-i" style="display:contents"></div>
+          <div id="pnl-e" style="display:contents"></div>
+          <div id="pnl-n" style="display:contents"></div>
+          <span id="pnl-i-bud" style="display:none"></span>
+          <span id="pnl-e-bud" style="display:none"></span>
         </div>
-        <div class="card"><div class="ct">Top Categories</div><div id="pnl-tops"><div style="font-size:13px;color:var(--t3)">No data</div></div></div>
       </div>
+    </div>
+    <!-- Year navigator -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px" id="pnl-yr-nav">
+      <button class="mna" onclick="pnlChYear(-1)">‹</button>
+      <span class="mnc" id="pnl-yr-d" style="min-width:50px;text-align:center">2026</span>
+      <button class="mna" onclick="pnlChYear(1)">›</button>
+    </div>
+    <!-- Annual P&L table -->
+    <div class="card" style="overflow-x:auto;padding:0">
+      <div id="pnl-stmt" style="min-width:900px"><div class="empty" style="padding:40px"><div class="ei">📋</div>No data yet.</div></div>
     </div>
   </div>
 
@@ -541,46 +580,66 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div><div class="ptitle">Explore</div><div class="psub">Drill into any slice of your finances</div></div>
     </div>
     <!-- Filters -->
-    <div class="card" style="margin-bottom:14px;padding:18px 22px">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-        <div>
+    <div class="card" style="margin-bottom:14px;padding:16px 20px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" id="ex-filters">
+        <div class="dd-wrap" id="dd-yr">
           <div class="fl" style="margin-bottom:5px">Year</div>
-          <select class="fs" style="width:90px" id="ex-yr" onchange="renderExplore()">
-            <option value="">All</option>
-            <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
-          </select>
+          <button class="dd-btn" onclick="toggleDD('dd-yr')">
+            <span id="dd-yr-lbl">2026</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-yr-menu">
+            <label class="dd-item"><input type="checkbox" value="2024" onchange="ddChange('yr')"> 2024</label>
+            <label class="dd-item"><input type="checkbox" value="2025" onchange="ddChange('yr')"> 2025</label>
+            <label class="dd-item"><input type="checkbox" value="2026" checked onchange="ddChange('yr')"> 2026</label>
+          </div>
         </div>
-        <div>
+        <div class="dd-wrap" id="dd-mon">
           <div class="fl" style="margin-bottom:5px">Month</div>
-          <select class="fs" style="width:130px" id="ex-mon" onchange="renderExplore()">
-            <option value="">All months</option>
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-          </select>
+          <button class="dd-btn" onclick="toggleDD('dd-mon')">
+            <span id="dd-mon-lbl">All months</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-mon-menu" style="min-width:140px">
+            <label class="dd-item"><input type="checkbox" value="1" onchange="ddChange('mon')"> January</label>
+            <label class="dd-item"><input type="checkbox" value="2" onchange="ddChange('mon')"> February</label>
+            <label class="dd-item"><input type="checkbox" value="3" onchange="ddChange('mon')"> March</label>
+            <label class="dd-item"><input type="checkbox" value="4" onchange="ddChange('mon')"> April</label>
+            <label class="dd-item"><input type="checkbox" value="5" onchange="ddChange('mon')"> May</label>
+            <label class="dd-item"><input type="checkbox" value="6" onchange="ddChange('mon')"> June</label>
+            <label class="dd-item"><input type="checkbox" value="7" onchange="ddChange('mon')"> July</label>
+            <label class="dd-item"><input type="checkbox" value="8" onchange="ddChange('mon')"> August</label>
+            <label class="dd-item"><input type="checkbox" value="9" onchange="ddChange('mon')"> September</label>
+            <label class="dd-item"><input type="checkbox" value="10" onchange="ddChange('mon')"> October</label>
+            <label class="dd-item"><input type="checkbox" value="11" onchange="ddChange('mon')"> November</label>
+            <label class="dd-item"><input type="checkbox" value="12" onchange="ddChange('mon')"> December</label>
+          </div>
         </div>
-        <div>
+        <div class="dd-wrap" id="dd-cat">
           <div class="fl" style="margin-bottom:5px">Category</div>
-          <select class="fs" style="width:150px" id="ex-cat" onchange="exCatChange()">
-            <option value="">All categories</option>
-          </select>
+          <button class="dd-btn" onclick="toggleDD('dd-cat')">
+            <span id="dd-cat-lbl">All categories</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-cat-menu" style="min-width:160px"></div>
         </div>
-        <div>
+        <div class="dd-wrap" id="dd-sub">
           <div class="fl" style="margin-bottom:5px">Subcategory</div>
-          <select class="fs" style="width:150px" id="ex-sub" onchange="renderExplore()">
-            <option value="">All subcategories</option>
-          </select>
+          <button class="dd-btn" onclick="toggleDD('dd-sub')">
+            <span id="dd-sub-lbl">All subcategories</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-sub-menu" style="min-width:160px"></div>
         </div>
-        <div>
+        <div class="dd-wrap" id="dd-type">
           <div class="fl" style="margin-bottom:5px">Type</div>
-          <select class="fs" style="width:120px" id="ex-type" onchange="renderExplore()">
-            <option value="">All</option>
-            <option value="income">Income</option>
-            <option value="expense">Expenses</option>
-          </select>
+          <button class="dd-btn" onclick="toggleDD('dd-type')">
+            <span id="dd-type-lbl">All types</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-type-menu">
+            <label class="dd-item"><input type="checkbox" value="income" onchange="ddChange('type')"> Income</label>
+            <label class="dd-item"><input type="checkbox" value="expense" onchange="ddChange('type')"> Expenses</label>
+          </div>
         </div>
-        <button class="btn btn-g btn-sm" onclick="clearExplore()" style="margin-bottom:1px">Clear</button>
+        <div style="display:flex;align-items:flex-end;padding-bottom:1px">
+          <button class="btn btn-g btn-sm" onclick="clearExplore()">Clear all</button>
+        </div>
       </div>
     </div>
     <!-- KPIs -->
@@ -589,7 +648,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div class="g21" style="margin-bottom:14px">
       <div class="card" style="padding:18px 20px">
         <div class="ct" style="margin-bottom:10px">Monthly Trend</div>
-        <div id="ex-trend" style="width:100%;min-height:80px"><div class="empty" style="padding:30px 0"><div class="ei">📊</div>No data</div></div>
+        <div id="ex-trend" style="width:100%"><div class="empty" style="padding:30px 0"><div class="ei">📊</div>No data</div></div>
       </div>
       <div class="card" style="padding:18px 20px">
         <div class="ct" style="margin-bottom:10px">By Category</div>
@@ -1022,7 +1081,8 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 let viewMonth = null;
 let pnlMonth = new Date().getMonth()+1;
-let pnlView = 'month';
+let pnlView = 'annual';
+let pnlYear = new Date().getFullYear();
 let accMonth = null;
 
 function fTxns(mOverride, typeFilter) {
@@ -1051,7 +1111,7 @@ async function switchDB(key, el) {
   document.getElementById('sb-title').style.color = cfg.color;
   applyDBVisibility();
   // Reset nav state
-  viewMonth=null; pnlMonth=new Date().getMonth()+1; pnlView='month'; accMonth=null;
+  viewMonth=null; pnlMonth=new Date().getMonth()+1; pnlView='annual'; pnlYear=new Date().getFullYear(); accMonth=null;
   document.getElementById('mon-d').textContent='All Months';
   document.getElementById('pnl-mon-d').textContent=MONTHS[new Date().getMonth()];
   document.getElementById('acc-mon-d').textContent='All Time';
@@ -1112,6 +1172,12 @@ function chMon(d) {
   document.getElementById('mon-d').textContent=viewMonth?MONTHS[viewMonth-1]:'All Months';
   renderOv();
 }
+function pnlChYear(d) {
+  pnlYear += d;
+  document.getElementById('pnl-yr-d').textContent = pnlYear;
+  renderPnL();
+}
+
 function pnlChMon(d) {
   if (pnlView==='budget') return;
   if (pnlMonth===null) pnlMonth=new Date().getMonth()+1;
@@ -1592,152 +1658,251 @@ async function saveBudgetInline() {
 
 function renderPnL() {
   const cats = getCats();
-  const now = new Date();
-  const monthsElapsed = now.getMonth() + 1;
-  const isBudgetView = pnlView === 'budget';
-  const budM = pnlView === 'ytd' ? monthsElapsed : 1;
-
-  let txns;
-  if (isBudgetView) { txns = []; }
-  else if (pnlView === 'month' && pnlMonth) { txns = fTxns(pnlMonth); }
-  else { txns = fTxns(0); }
-
-  const inc = txns.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const exp = txns.filter(t => t.type === 'expense').reduce((s, t) => s + Math.abs(t.amount), 0);
-  const net = inc - exp;
-
-  document.getElementById('pnl-i').textContent = fmt(inc);
-  document.getElementById('pnl-e').textContent = fmt(exp);
-  const nEl = document.getElementById('pnl-n');
-  nEl.textContent = fmt(net);
-  nEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('pnl-i-bud').textContent = fmt(getBudTotalInc() * budM);
-  document.getElementById('pnl-e-bud').textContent = fmt(getBudTotalExp() * budM);
-
-  // Grouped actuals by category > subcategory
-  const byCS = {};
-  txns.forEach(t => {
-    if (!byCS[t.category]) byCS[t.category] = {};
-    const key = t.subcategory || 'Other';
-    byCS[t.category][key] = (byCS[t.category][key] || 0) + (t.type === 'income' ? t.amount : Math.abs(t.amount));
-  });
-
   const bud = getBudget();
+  const isBudgetView = pnlView === 'budget';
+  const yr = pnlYear || new Date().getFullYear();
 
-  // Budget view: col headers are Line Item | Budget (editable) | (save button)
-  // Normal views: Line Item | Actual | Gap
-  const colHeader = isBudgetView
-    ? `<th style="text-align:left">Line Item</th><th>Monthly Budget</th><th></th>`
-    : `<th style="text-align:left">Line Item</th><th>Actual</th><th>Gap</th>`;
+  // ── Pre-compute monthly actuals (needed for summary strip and table) ──
+  const ytdTxns = S.transactions.filter(t => !t.ignored && new Date(t.date).getFullYear() === yr);
+  const ytdInc = ytdTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const ytdExp = ytdTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const ytdNet = ytdInc - ytdExp;
+  const yrD = document.getElementById('pnl-yr-d');
+  if(yrD) yrD.textContent = yr;
 
-  let html = `<table class="pnl-tbl"><thead><tr>${colHeader}</tr></thead><tbody>`;
+  // Monthly totals for summary strip
+  const mInc = [1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+    ytdTxns.filter(t=>t.type==='income'&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+t.amount,0));
+  const mExp = [1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+    ytdTxns.filter(t=>t.type==='expense'&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+Math.abs(t.amount),0));
+  const mNet = mInc.map((v,i)=>v-mExp[i]);
 
-  // ── INCOME ──
-  const incSubs = cats['Income'] || [];
-  const incBudObj = bud['Income'] || {};
-  const incActTotal = Object.values(byCS['Income'] || {}).reduce((s, v) => s + v, 0);
-  const incBudTotal = Object.values(incBudObj).reduce((s, v) => s + v, 0) * budM;
-  const incGap = incActTotal - incBudTotal;
+  const MTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const cs = 'padding:6px 8px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;white-space:nowrap';
+  const lcs = 'padding:6px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);min-width:100px';
+  const tcs = 'padding:6px 10px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;font-weight:700;white-space:nowrap;border-left:1px solid var(--border2)';
 
-  html += `<tr class="cat-hd" style="background:${CAT_COLORS['Income']}14">
-    <td style="color:${CAT_COLORS['Income']}"><strong>INCOME</strong></td>
-    <td class="mono" style="color:${CAT_COLORS['Income']}">${isBudgetView ? '' : fmt(incActTotal)}</td>
-    <td class="mono" style="color:${incGap >= 0 ? 'var(--green)' : 'var(--red)'}">${isBudgetView ? '' : fmt(incGap)}</td>
-  </tr>`;
+  const budInc = getBudTotalInc(), budExp = getBudTotalExp(), budNet = budInc - budExp;
+  const budCs = 'padding:6px 10px;text-align:right;font-family:"Nunito Sans",sans-serif;font-size:12px;color:var(--accent);background:var(--accent)08;white-space:nowrap;min-width:80px';
 
-  incSubs.forEach(sub => {
-    const act = (byCS['Income'] || {})[sub] || 0;
-    const budV = (incBudObj[sub] || 0) * budM;
-    const gap = act - budV;
-    const budInput = isBudgetView
-      ? `<input type="number" class="fi" id="${budId('Income', sub)}" value="${incBudObj[sub] || 0}" style="width:110px;padding:4px 8px;font-size:12.5px" min="0" step="1">`
-      : fmt(budV) === fmt(0) ? '—' : '';
-    html += `<tr class="sub-row">
-      <td>${sub}</td>
-      <td class="mono" style="color:var(--green)">${isBudgetView ? budInput : (act > 0 ? fmt(act) : '—')}</td>
-      <td class="mono" style="color:${act===0&&budV===0?'var(--t3)':gap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : (act===0&&budV===0 ? '—' : fmt(gap))}</td>
-    </tr>`;
-  });
+  const strip = document.getElementById('pnl-summary-strip');
+  if(strip) {
+    strip.innerHTML = `
+    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;border-bottom:2px solid var(--border2);padding-bottom:4px;margin-bottom:4px">
+      <div style="${lcs}">Year ${yr}</div>
+      <div style="${budCs};color:var(--t3);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;justify-content:flex-end">Budget</div>
+      ${MTHS.map(m=>`<div style="padding:4px 8px;text-align:right;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em">${m}</div>`).join('')}
+      <div style="padding:4px 10px;text-align:right;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.06em;border-left:1px solid var(--border2)">Total</div>
+    </div>
+    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;margin-bottom:2px">
+      <div style="${lcs};color:var(--green)">Income</div>
+      <div style="${budCs}">${budInc?fmt(budInc):'—'}</div>
+      ${mInc.map(v=>`<div style="${cs};color:${v?'var(--green)':'var(--t3)'}">${v?fmt(v):'—'}</div>`).join('')}
+      <div style="${tcs};color:var(--green)">${ytdInc?fmt(ytdInc):'—'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;margin-bottom:2px">
+      <div style="${lcs};color:var(--red)">Expenses</div>
+      <div style="${budCs}">${budExp?fmt(budExp):'—'}</div>
+      ${mExp.map(v=>`<div style="${cs};color:${v?'var(--red)':'var(--t3)'}">${v?fmt(v):'—'}</div>`).join('')}
+      <div style="${tcs};color:var(--red)">${ytdExp?fmt(ytdExp):'—'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:100px 90px repeat(12,1fr) 80px;border-top:1px solid var(--border)">
+      <div style="${lcs}">Net</div>
+      <div style="${budCs};color:${budNet>=0?'var(--green)':'var(--red)'}">${fmt(budNet)}</div>
+      ${mNet.map(v=>`<div style="${cs};color:${v>0?'var(--green)':v<0?'var(--red)':'var(--t3)'};font-weight:${v!==0?'700':'400'}">${v?fmt(v):'—'}</div>`).join('')}
+      <div style="${tcs};color:${ytdNet>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt(ytdNet)}</div>
+    </div>`;
+  }
 
-  const incBudTotalRaw = Object.values(incBudObj).reduce((s, v) => s + v, 0);
-  html += `<tr class="tot-row">
-    <td>Total Income</td>
-    <td class="mono lg" style="color:var(--green)">${isBudgetView ? fmt(incBudTotalRaw) : fmt(inc)}</td>
-    <td class="mono lg" style="color:${incGap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : fmt(incGap)}</td>
-  </tr>`;
+  // ── BUDGET VIEW: single editable column per line item ──
+  if (isBudgetView) {
+    document.getElementById('pnl-yr-nav').style.display = 'none';
+    let html = `<table class="pnl-tbl" style="padding:16px"><thead><tr>
+      <th style="text-align:left;min-width:200px">Line Item</th>
+      <th style="min-width:140px;text-align:right">Monthly Budget</th>
+    </tr></thead><tbody>`;
 
-  // ── EXPENSES ──
-  html += `<tr class="cat-hd"><td colspan="3" style="color:var(--red);padding-top:14px">EXPENSES</td></tr>`;
-
-  Object.keys(cats).filter(cat => cat !== 'Income').forEach(cat => {
-    const subs = cats[cat];
-    const budObj = bud[cat] || {};
-    const catAct = Object.values(byCS[cat] || {}).reduce((s, v) => s + v, 0);
-    const catBud = Object.values(budObj).reduce((s, v) => s + v, 0) * budM;
-    const catGap = catBud - catAct; // positive = under budget (good)
-
-    html += `<tr class="cat-hd" style="background:${CAT_COLORS[cat]}14">
-      <td style="color:${CAT_COLORS[cat]}"><strong>${cat}</strong></td>
-      <td class="mono" style="color:${CAT_COLORS[cat]}">${isBudgetView ? '' : (catAct > 0 ? fmt(catAct) : '—')}</td>
-      <td class="mono" style="color:${catGap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : fmt(catGap)}</td>
-    </tr>`;
-
-    subs.forEach(sub => {
-      const act = (byCS[cat] || {})[sub] || 0;
-      const budV = (budObj[sub] || 0) * budM;
-      const gap = budV - act;
-      const budRaw = budObj[sub] || 0;
-      const budInput = isBudgetView
-        ? `<input type="number" class="fi" id="${budId(cat, sub)}" value="${budRaw}" style="width:110px;padding:4px 8px;font-size:12.5px" min="0" step="1">`
-        : '';
+    // Income
+    const incBudObj = bud['Income'] || {};
+    html += `<tr class="cat-hd" style="background:${CAT_COLORS['Income']}14">
+      <td style="color:${CAT_COLORS['Income']}"><strong>INCOME</strong></td><td></td></tr>`;
+    (cats['Income']||[]).forEach(sub => {
+      const val = incBudObj[sub] || 0;
       html += `<tr class="sub-row">
         <td>${sub}</td>
-        <td class="mono" style="color:var(--red)">${isBudgetView ? budInput : (act > 0 ? fmt(act) : '—')}</td>
-        <td class="mono" style="color:${act===0&&budV===0?'var(--t3)':gap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : (act===0&&budV===0 ? '—' : fmt(gap))}</td>
+        <td style="text-align:right;padding:6px 10px">
+          <input type="number" class="fi" id="${budId('Income',sub)}" value="${val}"
+            style="width:120px;padding:6px 10px;font-size:13px;text-align:right" min="0" step="1">
+        </td></tr>`;
+    });
+    html += `<tr class="tot-row">
+      <td>Total Income</td>
+      <td class="mono lg" style="color:var(--green);text-align:right;padding:8px 10px">${fmt(getBudTotalInc())}</td>
+    </tr>`;
+
+    // Expenses
+    html += `<tr class="cat-hd"><td colspan="2" style="color:var(--red);padding-top:14px">EXPENSES</td></tr>`;
+    Object.keys(cats).filter(cat=>cat!=='Income').forEach(cat => {
+      const budObj = bud[cat] || {};
+      const catTotal = Object.values(budObj).reduce((s,v)=>s+v,0);
+      html += `<tr class="cat-hd" style="background:${CAT_COLORS[cat]}14">
+        <td style="color:${CAT_COLORS[cat]}"><strong>${cat}</strong></td>
+        <td class="mono" style="color:${CAT_COLORS[cat]};text-align:right;padding:8px 10px">${catTotal?fmt(catTotal):'—'}</td>
+      </tr>`;
+      (cats[cat]||[]).forEach(sub => {
+        const val = budObj[sub] || 0;
+        html += `<tr class="sub-row">
+          <td>${sub}</td>
+          <td style="text-align:right;padding:6px 10px">
+            <input type="number" class="fi" id="${budId(cat,sub)}" value="${val}"
+              style="width:120px;padding:6px 10px;font-size:13px;text-align:right" min="0" step="1">
+          </td></tr>`;
+      });
+    });
+    html += `<tr class="tot-row">
+      <td>Total Expenses</td>
+      <td class="mono lg" style="color:var(--red);text-align:right;padding:8px 10px">${fmt(getBudTotalExp())}</td>
+    </tr>`;
+    html += `<tr class="tot-row" style="border-top:2px solid var(--border2)">
+      <td>NET</td>
+      <td class="mono lg" style="color:${(getBudTotalInc()-getBudTotalExp())>=0?'var(--green)':'var(--red)'};text-align:right;padding:8px 10px">${fmt(getBudTotalInc()-getBudTotalExp())}</td>
+    </tr>`;
+    html += `<tr><td colspan="2" style="padding:16px 10px 6px">
+      <button class="btn btn-p" onclick="saveBudgetInline()">Save Budget</button>
+      <span style="font-size:11px;color:var(--t3);margin-left:12px">Values reflect in Annual P&L</span>
+    </td></tr>`;
+    html += '</tbody></table>';
+    document.getElementById('pnl-stmt').innerHTML = html;
+    return;
+  }
+
+  // ── ANNUAL VIEW: Budget | Jan | Feb | ... | Dec | Total ──
+  const yrNav2 = document.getElementById('pnl-yr-nav');
+  if(yrNav2) yrNav2.style.display = 'flex';
+
+  // Pre-compute monthly actuals for each cat/sub
+  const monthly = {}; // monthly[cat][sub][month] = value
+  for(let m=1;m<=12;m++){
+    const mTxns = S.transactions.filter(t => !t.ignored && new Date(t.date).getFullYear()===yr && new Date(t.date).getMonth()+1===m);
+    mTxns.forEach(t => {
+      const cat = t.category, sub = t.subcategory || 'Other';
+      if(!monthly[cat]) monthly[cat] = {};
+      if(!monthly[cat][sub]) monthly[cat][sub] = {};
+      monthly[cat][sub][m] = (monthly[cat][sub][m]||0) + (t.type==='income'?t.amount:Math.abs(t.amount));
+    });
+  }
+
+  // MTHS defined above
+  const colW = 'min-width:72px';
+  const thStyle = 'padding:8px 10px;font-size:11px;font-weight:700;color:var(--t3);text-align:right;white-space:nowrap;border-bottom:2px solid var(--border2)';
+
+  let html = `<table class="pnl-tbl" style="font-size:12px"><thead><tr>
+    <th style="text-align:left;min-width:160px;${thStyle.split(';').slice(2).join(';')}">Line Item</th>
+    <th style="${thStyle};color:var(--accent)">Budget</th>
+    ${MTHS.map(m=>`<th style="${thStyle}">${m}</th>`).join('')}
+    <th style="${thStyle};color:var(--text)">Total</th>
+  </tr></thead><tbody>`;
+
+  function mCell(val, isInc) {
+    if(!val) return `<td class="mono" style="color:var(--t3);text-align:right;padding:6px 10px">—</td>`;
+    return `<td class="mono" style="color:${isInc?'var(--green)':'var(--red)'};text-align:right;padding:6px 10px">${fmt(val)}</td>`;
+  }
+  function budCell(val) {
+    return `<td class="mono" style="color:var(--accent);text-align:right;padding:6px 10px;background:var(--accent)08">${val?fmt(val):'—'}</td>`;
+  }
+  function totCell(val, isInc) {
+    return `<td class="mono" style="color:${val===0?'var(--t3)':isInc?'var(--green)':'var(--red)'};font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${val?fmt(val):'—'}</td>`;
+  }
+
+  // INCOME section
+  const incBudObj = bud['Income'] || {};
+  html += `<tr class="cat-hd" style="background:${CAT_COLORS['Income']}12">
+    <td style="color:${CAT_COLORS['Income']};padding:8px 10px"><strong>INCOME</strong></td>
+    ${budCell(getBudTotalInc())}
+    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{
+      const v=Object.values(monthly['Income']||{}).reduce((s,sub)=>s+(sub[m]||0),0);
+      return mCell(v,true);
+    }).join('')}
+    ${totCell(ytdInc,true)}
+  </tr>`;
+
+  (cats['Income']||[]).forEach(sub => {
+    const budV = incBudObj[sub]||0;
+    const total = [1,2,3,4,5,6,7,8,9,10,11,12].reduce((s,m)=>(monthly['Income']?.[sub]?.[m]||0)+s,0);
+    html += `<tr class="sub-row">
+      <td style="padding:6px 10px 6px 22px">${sub}</td>
+      ${budCell(budV)}
+      ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>mCell(monthly['Income']?.[sub]?.[m]||0,true)).join('')}
+      ${totCell(total,true)}
+    </tr>`;
+  });
+
+  html += `<tr class="tot-row">
+    <td style="padding:8px 10px">Total Income</td>
+    ${budCell(getBudTotalInc())}
+    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{
+      const v=Object.values(monthly['Income']||{}).reduce((s,sub)=>s+(sub[m]||0),0);
+      return `<td class="mono lg" style="color:var(--green);text-align:right;padding:6px 10px">${v?fmt(v):'—'}</td>`;
+    }).join('')}
+    <td class="mono lg" style="color:var(--green);font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${fmt(ytdInc)}</td>
+  </tr>`;
+
+  // EXPENSES section
+  html += `<tr class="cat-hd"><td colspan="${15}" style="color:var(--red);padding:10px 10px 6px;font-weight:700;font-size:11px;letter-spacing:0.05em">EXPENSES</td></tr>`;
+
+  Object.keys(cats).filter(cat=>cat!=='Income').forEach(cat => {
+    const budObj = bud[cat]||{};
+    const catBudTotal = Object.values(budObj).reduce((s,v)=>s+v,0);
+    const catMonthly = [1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+      Object.values(monthly[cat]||{}).reduce((s,sub)=>s+(sub[m]||0),0)
+    );
+    const catTotal = catMonthly.reduce((s,v)=>s+v,0);
+
+    html += `<tr class="cat-hd" style="background:${CAT_COLORS[cat]}12">
+      <td style="color:${CAT_COLORS[cat]};padding:8px 10px"><strong>${cat}</strong></td>
+      ${budCell(catBudTotal)}
+      ${catMonthly.map(v=>mCell(v,false)).join('')}
+      ${totCell(catTotal,false)}
+    </tr>`;
+
+    (cats[cat]||[]).forEach(sub => {
+      const budV = budObj[sub]||0;
+      const total = [1,2,3,4,5,6,7,8,9,10,11,12].reduce((s,m)=>(monthly[cat]?.[sub]?.[m]||0)+s,0);
+      html += `<tr class="sub-row">
+        <td style="padding:6px 10px 6px 22px">${sub}</td>
+        ${budCell(budV)}
+        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>mCell(monthly[cat]?.[sub]?.[m]||0,false)).join('')}
+        ${totCell(total,false)}
       </tr>`;
     });
   });
 
-  const totBudExp = getBudTotalExp();
-  const expGap = totBudExp * budM - exp;
+  // Total rows
+  const expMonthly = [1,2,3,4,5,6,7,8,9,10,11,12].map(m=>
+    Object.keys(cats).filter(c=>c!=='Income').reduce((s,cat)=>
+      s+Object.values(monthly[cat]||{}).reduce((ss,sub)=>ss+(sub[m]||0),0),0)
+  );
+  const netMonthly = [1,2,3,4,5,6,7,8,9,10,11,12].map(m=>{
+    const incM = Object.values(monthly['Income']||{}).reduce((s,sub)=>s+(sub[m]||0),0);
+    return incM - expMonthly[m-1];
+  });
+
   html += `<tr class="tot-row">
-    <td>Total Expenses</td>
-    <td class="mono lg" style="color:var(--red)">${isBudgetView ? fmt(totBudExp) : fmt(exp)}</td>
-    <td class="mono lg" style="color:${expGap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : fmt(expGap)}</td>
+    <td style="padding:8px 10px">Total Expenses</td>
+    ${budCell(getBudTotalExp())}
+    ${expMonthly.map(v=>`<td class="mono lg" style="color:var(--red);text-align:right;padding:6px 10px">${v?fmt(v):'—'}</td>`).join('')}
+    <td class="mono lg" style="color:var(--red);font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${fmt(ytdExp)}</td>
   </tr>`;
 
-  const netBud = (getBudTotalInc() - getBudTotalExp()) * budM;
-  const netGap = net - netBud;
   html += `<tr class="tot-row" style="border-top:2px solid var(--border2)">
-    <td>NET RESULT</td>
-    <td class="mono lg" style="color:${net>=0?'var(--green)':'var(--red)'}">${fmt(isBudgetView ? getBudTotalInc()-getBudTotalExp() : net)}</td>
-    <td class="mono lg" style="color:${netGap>=0?'var(--green)':'var(--red)'}">${isBudgetView ? '' : fmt(netGap)}</td>
+    <td style="padding:8px 10px">NET RESULT</td>
+    ${budCell(getBudTotalInc()-getBudTotalExp())}
+    ${netMonthly.map(v=>`<td class="mono lg" style="color:${v>=0?'var(--green)':'var(--red)'};text-align:right;padding:6px 10px">${v?fmt(v):'—'}</td>`).join('')}
+    <td class="mono lg" style="color:${ytdNet>=0?'var(--green)':'var(--red)'};font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${fmt(ytdNet)}</td>
   </tr>`;
-
-  // Save button row when in budget view
-  if (isBudgetView) {
-    html += `<tr><td colspan="3" style="padding:14px 10px 4px">
-      <button class="btn btn-p" onclick="saveBudgetInline()">Save Budget</button>
-    </td></tr>`;
-  }
 
   html += '</tbody></table>';
   document.getElementById('pnl-stmt').innerHTML = html;
-
-  // Top expense categories sidebar
-  const tops = Object.keys(cats).filter(c => c !== 'Income')
-    .map(cat => ({ cat, t: Object.values(byCS[cat] || {}).reduce((s, v) => s + v, 0) }))
-    .sort((a, b) => b.t - a.t).filter(x => x.t > 0);
-  const mx = tops[0]?.t || 1;
-  document.getElementById('pnl-tops').innerHTML = tops.slice(0, 5).map(({ cat, t }) =>
-    `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:12px;color:var(--t2);width:88px;flex-shrink:0">${cat}</div>
-      <div style="flex:1;height:4px;background:var(--s2);border-radius:3px;overflow:hidden">
-        <div style="height:100%;border-radius:3px;background:${CAT_COLORS[cat]};width:${t/mx*100}%"></div>
-      </div>
-      <div style="font-family:'Nunito Sans',sans-serif;font-size:12px;color:var(--t3);width:65px;text-align:right">${fmtK(t)}</div>
-    </div>`
-  ).join('') || '<div style="font-size:13px;color:var(--t3)">No expense data</div>';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2177,6 +2342,39 @@ function generateAISummary() {
   .mob-nav { display: none !important; }
 }
 
+
+/* ── CHECKBOX DROPDOWN FILTERS ── */
+.dd-wrap { position:relative; }
+.dd-btn {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px 12px; min-width:120px; background:var(--white);
+  border:1.5px solid var(--border); border-radius:8px; cursor:pointer;
+  font-size:13px; font-family:'Plus Jakarta Sans',sans-serif; color:var(--text);
+  white-space:nowrap; transition:border-color 0.13s;
+}
+.dd-btn:hover { border-color:var(--accent); }
+.dd-btn.active { border-color:var(--accent); color:var(--accent); }
+.dd-arr { font-size:10px; color:var(--t3); transition:transform 0.13s; }
+.dd-btn.active .dd-arr { transform:rotate(180deg); color:var(--accent); }
+.dd-menu {
+  display:none; position:absolute; top:calc(100% + 6px); left:0;
+  background:var(--white); border:1.5px solid var(--border); border-radius:10px;
+  box-shadow:0 8px 24px rgba(79,70,229,0.12); z-index:500;
+  min-width:130px; padding:6px; max-height:280px; overflow-y:auto;
+}
+.dd-menu.open { display:block; }
+.dd-item {
+  display:flex; align-items:center; gap:9px; padding:8px 10px;
+  border-radius:7px; cursor:pointer; font-size:13px; color:var(--t2);
+  font-family:'Plus Jakarta Sans',sans-serif; transition:background 0.1s;
+  user-select:none;
+}
+.dd-item:hover { background:var(--s2); }
+.dd-item input[type=checkbox] {
+  width:15px; height:15px; accent-color:var(--accent);
+  cursor:pointer; flex-shrink:0; margin:0;
+}
+
 </style>`;
 
   div.innerHTML = style
@@ -2225,21 +2423,56 @@ function clearExplore() {
   renderExplore();
 }
 
+// ── DROPDOWN CHECKBOX HELPERS ──
+function toggleDD(id) {
+  const wrap = document.getElementById(id);
+  const menu = document.getElementById(id+'-menu');
+  const btn  = wrap.querySelector('.dd-btn');
+  const isOpen = menu.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('open'));
+  document.querySelectorAll('.dd-btn').forEach(b=>b.classList.remove('active'));
+  if (!isOpen) { menu.classList.add('open'); btn.classList.add('active'); }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dd-wrap')) {
+    document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('open'));
+    document.querySelectorAll('.dd-btn').forEach(b=>b.classList.remove('active'));
+  }
+});
+function getDDVals(key) {
+  return Array.from(document.querySelectorAll(`#dd-${key}-menu input:checked`)).map(i=>i.value);
+}
+function updateDDLabel(key, allLabel) {
+  const vals = getDDVals(key);
+  const lbl = document.getElementById(`dd-${key}-lbl`);
+  if (!lbl) return;
+  if (vals.length === 0) { lbl.textContent = allLabel; return; }
+  if (vals.length === 1) { lbl.textContent = lbl.closest('.dd-wrap').querySelector(`input[value="${vals[0]}"]`)?.closest('label')?.textContent?.trim() || vals[0]; return; }
+  lbl.textContent = vals.length + ' selected';
+}
+function ddChange(key) {
+  const labels = { yr:'2026', mon:'All months', cat:'All categories', sub:'All subcategories', type:'All types' };
+  updateDDLabel(key, labels[key]);
+  if (key === 'cat') { exCatChange(); return; }
+  renderExplore();
+}
+
 function renderExplore() {
-  const yr  = parseInt(document.getElementById('ex-yr').value)||null;
-  const mon = parseInt(document.getElementById('ex-mon').value)||null;
-  const cat = document.getElementById('ex-cat').value;
-  const sub = document.getElementById('ex-sub').value;
-  const typ = document.getElementById('ex-type').value;
+  const yrs  = getDDVals('yr').map(Number);
+  const mons = getDDVals('mon').map(Number);
+  const cats = getDDVals('cat');
+  const subs = getDDVals('sub');
+  const typs = getDDVals('type');
 
   const rows = S.transactions.filter(t => {
     if (t.ignored) return false;
     const d = new Date(t.date);
-    if (yr  && d.getFullYear()  !== yr)  return false;
-    if (mon && d.getMonth()+1   !== mon) return false;
-    if (cat && t.category       !== cat) return false;
-    if (sub && t.subcategory    !== sub) return false;
-    if (typ && t.type           !== typ) return false;
+    if (yrs.length  && !yrs.includes(d.getFullYear()))   return false;
+    if (mons.length && !mons.includes(d.getMonth()+1))   return false;
+    if (cats.length && !cats.includes(t.category))       return false;
+    if (subs.length && !subs.includes(t.subcategory))    return false;
+    if (typs.length && !typs.includes(t.type))           return false;
     return true;
   });
 
@@ -2293,7 +2526,7 @@ function renderExplore() {
            + `<rect x="${xe.toFixed(1)}" y="${(EPT+EIH-bhe).toFixed(1)}" width="${ebarW}" height="${bhe.toFixed(1)}" rx="2" fill="#f43f5e" opacity="0.8"><title>${d.l} Expenses: ${fmt(d.e)}</title></rect>`
            + `<text x="${cx.toFixed(1)}" y="${EVH-8}" text-anchor="middle" font-size="8.5" fill="#9a9db8" font-family="Plus Jakarta Sans">${d.l}</text>`;
     }).join('');
-    tEl.innerHTML=`<svg viewBox="0 0 ${EVW} ${EVH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;max-height:140px">${eyTicks}${ebars}</svg>`;
+    tEl.innerHTML=`<svg viewBox="0 0 ${EVW} ${EVH}" preserveAspectRatio="none" style="display:block;width:100%;height:140px">${eyTicks}${ebars}</svg>`;
   }
 
   // Category breakdown bars
