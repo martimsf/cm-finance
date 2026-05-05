@@ -1733,8 +1733,7 @@ function renderPnL() {
   // Budget view removed — budget now managed in Explore section
 
   // ── ANNUAL VIEW: Budget | Jan | Feb | ... | Dec | Total ──
-  const yrNav2 = document.getElementById('pnl-yr-nav');
-  if(yrNav2) yrNav2.style.display = 'flex';
+  const yrNav2 = document.getElementById('pnl-yr-nav'); if(yrNav2) yrNav2.style.display='flex';
 
   // Pre-compute monthly actuals for each cat/sub
   const monthly = {}; // monthly[cat][sub][month] = value
@@ -2351,10 +2350,15 @@ function generateAISummary() {
 // ══════════════════════════════════════════════════════════
 function buildExploreFilters() {
   const cats = getCats();
-  const catSel = document.getElementById('ex-cat');
-  catSel.innerHTML = '<option value="">All categories</option>' +
-    Object.keys(cats).map(c=>`<option>${c}</option>`).join('');
-  document.getElementById('ex-sub').innerHTML = '<option value="">All subcategories</option>';
+  const catMenu = document.getElementById('dd-cat-menu');
+  if(catMenu) catMenu.innerHTML = Object.keys(cats).map(cat=>
+    `<label class="dd-item"><input type="checkbox" value="${cat}" onchange="ddChange('cat')"> ${cat}</label>`
+  ).join('');
+  const allSubs = [...new Set(Object.values(cats).flat())].sort();
+  const subMenu = document.getElementById('dd-sub-menu');
+  if(subMenu) subMenu.innerHTML = allSubs.map(s=>
+    `<label class="dd-item"><input type="checkbox" value="${s}" onchange="ddChange('sub')"> ${s}</label>`
+  ).join('');
 }
 
 function exCatChange() {
@@ -2539,9 +2543,9 @@ async function init() {
   buildCatFilter();
   buildAccSelector();
   buildExploreFilters();
-  buildExploreFilters();
   await loadS();
   renderOv();
+  applyDBVisibility();
 }
 init();
 
