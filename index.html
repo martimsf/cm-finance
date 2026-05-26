@@ -348,6 +348,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   cursor:pointer; flex-shrink:0; margin:0;
 }
 
+
+/* ── P&L TABLE HORIZONTAL SCROLL — pin first column ── */
+.pnl-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.pnl-tbl td:first-child,
+.pnl-tbl th:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--white);
+}
+.pnl-tbl tr.cat-hd td:first-child { background: inherit; }
+
 </style>
 </head>
 <body>
@@ -368,7 +382,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
 <div class="app">
 <!-- SIDEBAR -->
-<aside class="sb">
+<aside class="sb" id="sidebar">
   <div class="logo">
     <div class="logo-w" id="sb-title">C&M Family</div>
     <div class="logo-s" id="sb-sub">Joint Dashboard</div>
@@ -412,9 +426,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 </nav>
 <!-- MOBILE MORE MENU -->
 <div id="mob-more" style="display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:299;padding:12px;box-shadow:0 -4px 16px rgba(0,0,0,0.08)">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <button class="mob-tab" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px" onclick="nav('goals',this);mobNav(this);closeMobMore()"><span class="mob-icon">◎</span>Goals</button>
-    <button class="mob-tab" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px" onclick="nav('accounts',this);mobNav(this);closeMobMore()"><span class="mob-icon">▣</span>Accounts</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <button class="mob-tab" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px" onclick="nav('budget',this);mobNav(this);closeMobMore()"><span class="mob-icon">◫</span>Budget</button>
+    <button class="mob-tab" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px" id="mob-goals-btn" onclick="nav('goals',this);mobNav(this);closeMobMore()"><span class="mob-icon">◎</span>Goals</button>
+    <button class="mob-tab" style="flex-direction:row;gap:8px;justify-content:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px" id="mob-accounts-btn" onclick="nav('accounts',this);mobNav(this);closeMobMore()"><span class="mob-icon">▣</span>Accounts</button>
   </div>
 </div>
 
@@ -482,7 +497,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       </div>
     </div>
     <!-- Summary strip -->
-    <div class="card" style="padding:14px 20px;margin-bottom:10px;overflow-x:auto">
+    <div class="card pnl-scroll-wrap" style="padding:14px 20px;margin-bottom:10px">
       <div id="pnl-summary-strip" style="min-width:700px">
         <div style="display:grid;grid-template-columns:160px repeat(12,1fr) 80px;gap:0;align-items:center">
           <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em">
@@ -503,7 +518,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <button class="mna" onclick="pnlChYear(1)">›</button>
     </div>
     <!-- Annual P&L table -->
-    <div class="card" style="overflow-x:auto;padding:0">
+    <div class="card pnl-scroll-wrap" style="padding:0">
       <div id="pnl-stmt" style="min-width:900px"><div class="empty" style="padding:40px"><div class="ei">📋</div>No data yet.</div></div>
     </div>
   </div>
@@ -1386,18 +1401,43 @@ function parseActivoBank(ev) {
 }
 
 function showStaging(skip) {
-  const cats=getCats();
-  const eC=pending.filter(p=>p._type==='expense').length;
-  const iC=pending.filter(p=>p._type==='income').length;
-  document.getElementById('imp-info').textContent=`Found: ${eC} expenses · ${iC} income · ${skip} skipped`;
+  const cats = getCats();
+  const dupeKey = t => `${t.date}|${t.description}|${t.amount}`;
+  const existingKeys = new Set(S.transactions.map(dupeKey));
+
+  // Mark duplicates on pending rows
+  pending.forEach(row => {
+    row._isDupe = existingKeys.has(dupeKey({date:row.date, description:row.description, amount:row.amount}));
+  });
+
+  const eC = pending.filter(p=>p._type==='expense'&&!p._isDupe).length;
+  const iC = pending.filter(p=>p._type==='income'&&!p._isDupe).length;
+  const dupeC = pending.filter(p=>p._isDupe).length;
+
+  document.getElementById('imp-info').innerHTML =
+    `Found: <strong>${eC}</strong> expenses · <strong>${iC}</strong> income · <strong>${skip}</strong> skipped`
+    + (dupeC ? ` · <span style="color:var(--amber);font-weight:600">${dupeC} duplicates hidden</span>` : '');
+
   if(!pending.length){ document.getElementById('imp-stage').style.display='none'; document.getElementById('imp-ok').style.display='none'; return; }
   document.getElementById('imp-stage').style.display='block';
+
+  const toShow = pending.filter(p=>!p._isDupe);
+  if(!toShow.length){
+    document.getElementById('imp-ok').style.display='none';
+    document.getElementById('imp-rows').innerHTML=`<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px">All ${dupeC} transactions already exist — nothing new to import.</div>`;
+    return;
+  }
+
   document.getElementById('imp-ok').style.display='inline-flex';
-  document.getElementById('imp-rows').innerHTML=pending.map((row,i)=>{
-    const isInc=row._type==='income';
-    const badge=isInc?`<span class="bdg bu" style="font-size:10px">Income</span>`:`<span class="bdg bd" style="font-size:10px">Expense</span>`;
-    const catOpts=Object.keys(cats).filter(c=>isInc?c==='Income':c!=='Income').map(c=>`<option${c===row.category?' selected':''}>${c}</option>`).join('');
-    const subOpts=(cats[row.category]||[]).map(s=>`<option${s===row.subcategory?' selected':''}>${s}</option>`).join('');
+  document.getElementById('imp-ok').textContent = `Import ${toShow.length} transaction${toShow.length!==1?'s':''}`;
+
+  document.getElementById('imp-rows').innerHTML = toShow.map((row,i)=>{
+    const isInc = row._type==='income';
+    const badge = isInc
+      ? `<span class="bdg bu" style="font-size:10px">Income</span>`
+      : `<span class="bdg bd" style="font-size:10px">Expense</span>`;
+    const catOpts = Object.keys(cats).filter(c=>isInc?c==='Income':c!=='Income').map(c=>`<option${c===row.category?' selected':''}>${c}</option>`).join('');
+    const subOpts = (cats[row.category]||[]).map(s=>`<option${s===row.subcategory?' selected':''}>${s}</option>`).join('');
     return `<div class="csr">
       <div class="csd">${row.date}</div>
       <div class="csdesc" title="${row.description}">${row.description}</div>
@@ -1416,26 +1456,24 @@ function updImpSub(i) {
 }
 
 async function confirmImport() {
-  const rows = [...pending]; pending = [];
+  // Only import non-duplicate rows (dupes already filtered in showStaging)
+  const rows = pending.filter(p=>!p._isDupe);
+  pending = [];
   closeM('import');
-  setLoading(true, 'Importing ' + rows.length + ' transactions…');
+  setLoading(true, `Importing ${rows.length} transactions…`);
   try {
-    // Deduplicate against existing
-    const dupeKey = t => `${t.date}|${t.description}|${t.amount}`;
-    const existingKeys = new Set(S.transactions.map(dupeKey));
-    let n = 0, skipped = 0;
+    let n = 0;
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const cat = document.getElementById(`ic-c-${i}`)?.value || row.category;
       const sub = document.getElementById(`ic-s-${i}`)?.value || row.subcategory;
       const txn = { id: Date.now()+i, date: row.date, amount: row.amount, description: row.description, type: row._type, category: cat, subcategory: sub, person: null, ignored: false };
-      if (existingKeys.has(dupeKey(txn))) { skipped++; continue; }
       await saveTxn(txn);
       S.transactions.unshift(txn);
       n++;
     }
     S.transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
-    toast(`✓ Imported ${n}${skipped ? ' (' + skipped + ' duplicates skipped)' : ''}`);
+    toast(`✓ Imported ${n} transaction${n!==1?'s':''}`);
     renderOv(); renderTxn(); renderPnL();
   } catch(e) {
     console.error('Import error:', e);
@@ -2331,6 +2369,20 @@ function generateAISummary() {
   cursor:pointer; flex-shrink:0; margin:0;
 }
 
+
+/* ── P&L TABLE HORIZONTAL SCROLL — pin first column ── */
+.pnl-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.pnl-tbl td:first-child,
+.pnl-tbl th:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--white);
+}
+.pnl-tbl tr.cat-hd td:first-child { background: inherit; }
+
 </style>`;
 
   div.innerHTML = style
@@ -2549,6 +2601,8 @@ async function init() {
   applyDBVisibility();
 }
 init();
+
+
 
 // ── MOBILE NAV ──
 function mobNav(el) {
