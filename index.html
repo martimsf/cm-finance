@@ -378,6 +378,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <button class="db-btn on" onclick="switchDB('cm',this)">🏠 C&M Joint</button>
   <button class="db-btn" onclick="switchDB('martim',this)">👤 Martim</button>
   <button class="db-btn" onclick="switchDB('carlota',this)">👤 Carlota</button>
+  <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+    <button class="db-btn" onclick="chYear(-1)" style="padding:5px 10px;font-size:13px">‹</button>
+    <span id="topbar-year" style="font-family:'Nunito Sans',sans-serif;font-size:14px;font-weight:700;color:var(--text);min-width:38px;text-align:center">2026</span>
+    <button class="db-btn" onclick="chYear(1)" style="padding:5px 10px;font-size:13px">›</button>
+  </div>
 </div>
 
 <div class="app">
@@ -400,7 +405,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <div class="ns" style="margin-top:4px">
     <div class="nl">Management</div>
     <div class="ni" id="nav-accounts" onclick="nav('accounts',this)"><span class="nx">▣</span> Accounts</div>
-    <div class="ni" onclick="nav('transactions',this)"><span class="nx">≡</span> Transactions</div>
+    <div class="ni" onclick="nav('transactions',this)"><span class="nx">≡</span> Transactions <span id="flag-badge" style="display:none;background:var(--amber);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px">0</span></div>
     <div class="ni" onclick="nav('explore',this)"><span class="nx">◉</span> Explore</div>
   </div>
 </aside>
@@ -456,7 +461,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div class="g21" style="margin-bottom:12px">
       <div class="card" style="padding:18px 20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="ct" style="margin-bottom:0">Cash Flow — Monthly</div>
+          <div class="ct" style="margin-bottom:0" id="chart-title">Monthly Net</div>
           <div style="display:flex;gap:14px">
             <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3)"><div style="width:9px;height:9px;background:#6366f1;border-radius:2px"></div>Income</div>
             <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3)"><div style="width:9px;height:9px;background:#f43f5e;border-radius:2px"></div>Expenses</div>
@@ -1106,7 +1111,17 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function fmt(n){ return '€'+(Math.round(n||0)).toLocaleString('de-DE'); }
 function fmtK(n){ return Math.abs(n)>=10000?'€'+Math.round(n/1000)+'k':fmt(n); }
-function getYear(){ return new Date().getFullYear(); }
+let viewYear = new Date().getFullYear();
+function getYear(){ return viewYear; }
+function chYear(d){
+  viewYear += d;
+  document.getElementById('topbar-year').textContent = viewYear;
+  pnlYear = viewYear;
+  document.getElementById('pnl-yr-d').textContent = viewYear;
+  renderOv(); renderPnL();
+  if(document.getElementById('page-explore')?.classList.contains('on')) renderExplore();
+  filterTxn();
+}
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2800); }
 
 let viewMonth = null;
@@ -1120,7 +1135,7 @@ function fTxns(mOverride, typeFilter) {
   return S.transactions.filter(t => {
     if (t.ignored) return false; // always exclude ignored from analytics
     const d = new Date(t.date);
-    if (d.getFullYear() !== getYear()) return false;
+    if (d.getFullYear() !== viewYear) return false;
     if (m && d.getMonth()+1 !== m) return false;
     if (typeFilter && t.type !== typeFilter) return false;
     return true;
@@ -1967,6 +1982,7 @@ function filterTxn() {
     if(mon&&d.getMonth()+1!==mon) return false;
     if(yr&&d.getFullYear()!==yr) return false;
     if(typeF==='ignored'&&!t.ignored) return false;
+    if(typeF==='flagged'&&!t.flagged) return false;
     if(typeF==='income'&&(t.type!=='income'||t.ignored)) return false;
     if(typeF==='expense'&&(t.type!=='expense'||t.ignored)) return false;
     // ignored rows always visible unless a specific type filter hides them
@@ -1989,9 +2005,10 @@ function filterTxn() {
         ?`<span class="bdg bu" style="font-size:11px">Income</span>`
         :`<span class="bdg bd" style="font-size:11px">Expense</span>`;
     // Ignored: striped background via repeating-linear-gradient, full row dimmed
+    const isFlagged=r.flagged||false;
     const rowStyle=isIgnored
       ?'background:repeating-linear-gradient(45deg,#f7f8fc,#f7f8fc 6px,#f0f1f7 6px,#f0f1f7 12px);opacity:0.55;'
-      :'';
+      :isFlagged?'background:var(--amber)08;border-left:3px solid var(--amber);':'' ;
     return `<tr style="${rowStyle}">
       <td style="font-family:'Nunito Sans',sans-serif;font-size:12px;color:var(--t3)">${new Date(r.date).toLocaleDateString('en-GB')}</td>
       <td style="max-width:165px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t3);text-decoration:${isIgnored?'line-through':'none'}" title="${r.description||''}">${r.description||'—'}</td>
@@ -1999,11 +2016,13 @@ function filterTxn() {
       <td><select class="ie-sel" style="${isIgnored?'pointer-events:none;opacity:0.4':''}" onchange="inlineCat(${r.id},this.value)">${catOpts}</select></td>
       <td><select class="ie-sel" id="sub-${r.id}" style="${isIgnored?'pointer-events:none;opacity:0.4':''}" onchange="inlineSub(${r.id},this.value)">${subOpts}</select></td>
       <td class="amtc r" style="color:var(--t3);font-weight:600;text-decoration:${isIgnored?'line-through':'none'}">${isIgnored?'':isInc?'+':''}${fmt(Math.abs(r.amount))}</td>
+      <td class="amtc r" style="color:${bal>=0?'var(--t3)':'var(--red)'};font-size:12px">${fmt(bal)}</td>
       <td style="display:flex;gap:4px;align-items:center">
         ${isIgnored
           ?`<button class="btn btn-sm" style="background:var(--green-l);color:var(--green);border-color:var(--green)" onclick="toggleIgnore(${r.id})">↩ Restore</button>`
           :`<button class="btn btn-sm" style="color:var(--t3)" title="Ignore" onclick="toggleIgnore(${r.id})">⊘ Ignore</button>`
         }
+        <button class="btn btn-sm" style="${r.flagged?'color:var(--amber);border-color:var(--amber)':'color:var(--t3)'}" title="${r.flagged?'Remove flag':'Flag for review'}" onclick="toggleFlag(${r.id})">${r.flagged?'🚩':'⚑'}</button>
         <button class="btn btn-g btn-sm" onclick="delTxn(${r.id})">✕</button>
       </td>
     </tr>`;
@@ -2037,6 +2056,23 @@ async function toggleIgnore(id){
     filterTxn(); renderOv(); renderPnL();
     toast(t.ignored?'⊘ Ignored':'↩ Restored');
   } catch(e){ t.ignored=!t.ignored; toast('⚠ Save failed: '+e.message); }
+}
+
+async function toggleFlag(id){
+  const t=S.transactions.find(x=>x.id===id); if(!t) return;
+  t.flagged=!t.flagged;
+  try {
+    await saveTxn(t);
+    filterTxn();
+    updateFlagBadge();
+    toast(t.flagged?'🚩 Flagged for review':'Flag removed');
+  } catch(e){ t.flagged=!t.flagged; toast('⚠ Save failed: '+e.message); }
+}
+
+function updateFlagBadge(){
+  const count = S.transactions.filter(t=>t.flagged&&!t.ignored).length;
+  const badge = document.getElementById('flag-badge');
+  if(badge){ badge.textContent=count; badge.style.display=count?'inline-flex':'none'; }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2505,7 +2541,7 @@ function renderExplore() {
   `;
 
   // Monthly trend SVG
-  const yearForTrend = yr || new Date().getFullYear();
+  const yearForTrend = yrs.length===1 ? yrs[0] : new Date().getFullYear();
   const trendData = [];
   for(let m=1;m<=12;m++){
     const mRows = rows.filter(t=>new Date(t.date).getFullYear()===yearForTrend&&new Date(t.date).getMonth()+1===m);
@@ -2545,7 +2581,8 @@ function renderExplore() {
   // Category breakdown bars
   const byCat = {};
   rows.filter(t=>t.type==='expense').forEach(t=>{
-    const key = sub ? t.subcategory : (cat ? t.subcategory : t.category);
+    // Group by subcategory if subcategory filter active, otherwise by category
+    const key = subs.length ? t.subcategory : t.category;
     byCat[key] = (byCat[key]||0) + Math.abs(t.amount);
   });
   const catEntries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -2599,10 +2636,50 @@ async function init() {
   await loadS();
   renderOv();
   applyDBVisibility();
+  updateFlagBadge();
 }
 init();
 
 
+
+
+
+// ── EXPORT TO CSV ──
+function exportCSV() {
+  const txns = S.transactions.filter(t => !t.ignored);
+  if (!txns.length) { toast('⚠ No transactions to export'); return; }
+  const headers = ['Date','Description','Type','Category','Subcategory','Amount','Flagged'];
+  const rows = txns.map(t => [
+    t.date,
+    `"${(t.description||'').replace(/"/g,'""')}"`,
+    t.type,
+    t.category||'',
+    t.subcategory||'',
+    t.amount,
+    t.flagged?'Yes':'No'
+  ]);
+  const csv = [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const db = getDBCfg().label.replace(/\s+/g,'-').toLowerCase();
+  a.href = url;
+  a.download = `${db}-transactions-${viewYear}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Exported ' + txns.length + ' transactions');
+}
+
+// ── SUPABASE KEEP-ALIVE PING ──
+// Prevents free tier from pausing after 1 week of inactivity
+async function keepAlive() {
+  try {
+    await sbFetch('GET', 'cm_settings', null, '?limit=1');
+  } catch(e) { /* silent */ }
+}
+// Ping on load and every 4 days (in ms)
+keepAlive();
+setInterval(keepAlive, 4 * 24 * 60 * 60 * 1000);
 
 // ── MOBILE NAV ──
 function mobNav(el) {
