@@ -462,22 +462,28 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div class="sc cb"><div class="sc-icon">▲</div><div class="sl">Net Worth</div><div class="sv" id="k-nw">€0</div><div><span class="bdg bn">Accounts total</span></div><div class="bt"><div class="bf" style="width:100%;background:var(--blue)"></div></div></div>
     </div>
     <div class="g21" style="margin-bottom:12px">
-      <div class="card" style="padding:18px 20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <!-- YTD chart card — hidden in month view -->
+      <div class="card" style="padding:18px 20px" id="ytd-chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div class="ct" style="margin-bottom:0" id="chart-title">Monthly Net</div>
-          <div style="display:flex;gap:14px">
-            <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3)"><div style="width:9px;height:9px;background:#6366f1;border-radius:2px"></div>Income</div>
-            <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3)"><div style="width:9px;height:9px;background:#f43f5e;border-radius:2px"></div>Expenses</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)">
+            <span style="display:inline-block;width:8px;height:8px;background:#30a46c;border-radius:2px"></span>Surplus
+            <span style="display:inline-block;width:8px;height:8px;background:#e5484d;border-radius:2px;margin-left:6px"></span>Deficit
           </div>
         </div>
-        <div id="area-chart" style="width:100%"><div class="empty" style="padding:40px 0"><div class="ei">📊</div>Import data to see chart</div></div>
+        <div id="area-chart" style="width:100%;height:180px"><div class="empty" style="padding:40px 0"><div class="ei">📊</div>Import data to see chart</div></div>
       </div>
-      <div class="card" style="padding:18px 20px">
+      <!-- Expense breakdown — hidden in month view -->
+      <div class="card" style="padding:18px 20px" id="breakdown-card">
         <div class="ct" style="margin-bottom:12px">Expense Breakdown</div>
-        <div id="donut-wrap" style="display:flex;align-items:center;gap:16px">
-          <svg width="180" height="180" viewBox="0 0 100 100" id="donut-svg" style="flex-shrink:0"><circle cx="50" cy="50" r="36" fill="none" stroke="var(--s2)" stroke-width="13"/><text x="50" y="54" text-anchor="middle" fill="var(--t3)" font-size="7" font-family="Plus Jakarta Sans">No data</text></svg>
-          <div id="donut-leg" style="flex:1;min-width:0"><div style="font-size:13px;color:var(--t3)">No expense data</div></div>
-        </div>
+        <div id="donut-leg"><div style="font-size:13px;color:var(--t3)">No expense data</div></div>
+      </div>
+      <!-- Month view card — shown only in month view, spans full width -->
+      <div class="card" style="padding:18px 20px;display:none;grid-column:1/-1" id="month-insight-card">
+        <div class="ct" style="margin-bottom:14px" id="month-card-title">Month Snapshot</div>
+        <div id="month-callouts" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"></div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--t3);margin-bottom:10px">Expense Breakdown</div>
+        <div id="month-breakdown"></div>
       </div>
     </div>
     <div class="g3" id="ov-extra-cards" style="margin-bottom:12px">
@@ -611,7 +617,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
   <div class="page" id="page-explore">
     <div class="ph">
-      <div><div class="ptitle">Explore</div><div class="psub">Drill into your finances &amp; manage budget</div></div>
+      <div><div class="ptitle">Explore</div><div class="psub">Filter and drill into any slice</div></div>
     </div>
 
     <!-- Filters -->
@@ -619,9 +625,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" id="ex-filters">
         <div class="dd-wrap" id="dd-yr">
           <div class="fl" style="margin-bottom:5px">Year</div>
-          <button class="dd-btn" onclick="toggleDD('dd-yr')">
-            <span id="dd-yr-lbl">2026</span><span class="dd-arr">▾</span>
-          </button>
+          <button class="dd-btn" onclick="toggleDD('dd-yr')"><span id="dd-yr-lbl">2026</span><span class="dd-arr">▾</span></button>
           <div class="dd-menu" id="dd-yr-menu">
             <label class="dd-item"><input type="checkbox" value="2024" onchange="ddChange('yr')"> 2024</label>
             <label class="dd-item"><input type="checkbox" value="2025" onchange="ddChange('yr')"> 2025</label>
@@ -630,9 +634,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         </div>
         <div class="dd-wrap" id="dd-mon">
           <div class="fl" style="margin-bottom:5px">Month</div>
-          <button class="dd-btn" onclick="toggleDD('dd-mon')">
-            <span id="dd-mon-lbl">All months</span><span class="dd-arr">▾</span>
-          </button>
+          <button class="dd-btn" onclick="toggleDD('dd-mon')"><span id="dd-mon-lbl">All months</span><span class="dd-arr">▾</span></button>
           <div class="dd-menu" id="dd-mon-menu" style="min-width:140px">
             <label class="dd-item"><input type="checkbox" value="1" onchange="ddChange('mon')"> January</label>
             <label class="dd-item"><input type="checkbox" value="2" onchange="ddChange('mon')"> February</label>
@@ -650,23 +652,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         </div>
         <div class="dd-wrap" id="dd-cat">
           <div class="fl" style="margin-bottom:5px">Category</div>
-          <button class="dd-btn" onclick="toggleDD('dd-cat')">
-            <span id="dd-cat-lbl">All categories</span><span class="dd-arr">▾</span>
-          </button>
+          <button class="dd-btn" onclick="toggleDD('dd-cat')"><span id="dd-cat-lbl">All categories</span><span class="dd-arr">▾</span></button>
           <div class="dd-menu" id="dd-cat-menu" style="min-width:160px"></div>
         </div>
         <div class="dd-wrap" id="dd-sub">
           <div class="fl" style="margin-bottom:5px">Subcategory</div>
-          <button class="dd-btn" onclick="toggleDD('dd-sub')">
-            <span id="dd-sub-lbl">All subcategories</span><span class="dd-arr">▾</span>
-          </button>
+          <button class="dd-btn" onclick="toggleDD('dd-sub')"><span id="dd-sub-lbl">All subcategories</span><span class="dd-arr">▾</span></button>
           <div class="dd-menu" id="dd-sub-menu" style="min-width:160px"></div>
         </div>
         <div class="dd-wrap" id="dd-type">
           <div class="fl" style="margin-bottom:5px">Type</div>
-          <button class="dd-btn" onclick="toggleDD('dd-type')">
-            <span id="dd-type-lbl">All types</span><span class="dd-arr">▾</span>
-          </button>
+          <button class="dd-btn" onclick="toggleDD('dd-type')"><span id="dd-type-lbl">All types</span><span class="dd-arr">▾</span></button>
           <div class="dd-menu" id="dd-type-menu">
             <label class="dd-item"><input type="checkbox" value="income" onchange="ddChange('type')"> Income</label>
             <label class="dd-item"><input type="checkbox" value="expense" onchange="ddChange('type')"> Expenses</label>
@@ -677,29 +673,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         </div>
       </div>
     </div>
-    <!-- KPIs -->
+
+    <!-- 4 KPIs -->
     <div class="g4" id="ex-kpis" style="margin-bottom:14px"></div>
-    <!-- Charts row -->
-    <div class="g21" style="margin-bottom:14px">
-      <div class="card" style="padding:18px 20px">
-        <div class="ct" style="margin-bottom:10px">Monthly Trend</div>
-        <div id="ex-trend" style="width:100%"><div class="empty" style="padding:30px 0"><div class="ei">📊</div>No data</div></div>
-      </div>
-      <div class="card" style="padding:18px 20px">
-        <div class="ct" style="margin-bottom:10px">By Category</div>
-        <div id="ex-breakdown" style="width:100%"></div>
-      </div>
-    </div>
-    <!-- Transactions table -->
+
+    <!-- Transaction list -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div class="ct" style="margin-bottom:0">Transactions</div>
         <span id="ex-cnt" style="font-size:12px;color:var(--t3)">0 records</span>
       </div>
-      <table class="dt">
-        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Subcategory</th><th class="r">Amount</th></tr></thead>
-        <tbody id="ex-rows"><tr><td colspan="5"><div class="empty"><div class="ei">🔍</div>Apply filters above</div></td></tr></tbody>
-      </table>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="dt">
+          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Subcategory</th><th class="r">Amount</th></tr></thead>
+          <tbody id="ex-rows"><tr><td colspan="5"><div class="empty"><div class="ei">🔍</div>Apply filters above</div></td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1612,110 +1601,151 @@ function renderOv() {
   const lbl=viewMonth?MONTHS[viewMonth-1]:'Year to Date';
   document.getElementById('ov-sub').textContent=lbl+' · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  // ── CHART: Net bar (YTD) or 3 callouts (single month) ──
-  const ac = document.getElementById('area-chart');
+  // ── CHART: toggle between YTD and month view ──
+  const ytdCard    = document.getElementById('ytd-chart-card');
+  const brkCard    = document.getElementById('breakdown-card');
+  const mthCard    = document.getElementById('month-insight-card');
   const chartTitle = document.getElementById('chart-title');
 
   if (viewMonth) {
-    // ── SINGLE MONTH: 3 key callouts ──
-    if(chartTitle) chartTitle.textContent = MONTHS[viewMonth-1] + ' Snapshot';
-    const prevM = viewMonth===1 ? 12 : viewMonth-1;
-    const prevY = viewMonth===1 ? viewYear-1 : viewYear;
+    // ── SINGLE MONTH: hide YTD + breakdown, show unified month card ──
+    if(ytdCard) ytdCard.style.display='none';
+    if(brkCard) brkCard.style.display='none';
+    if(mthCard) mthCard.style.display='block';
+    const mt = document.getElementById('month-card-title');
+    if(mt) mt.textContent = MONTHS[viewMonth-1] + ' ' + viewYear;
+
+    const prevM = viewMonth===1?12:viewMonth-1;
+    const prevY = viewMonth===1?viewYear-1:viewYear;
     const prevTxns = S.transactions.filter(t=>!t.ignored&&new Date(t.date).getFullYear()===prevY&&new Date(t.date).getMonth()+1===prevM);
     const prevInc = prevTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
     const prevExp = prevTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
-    const prevNet = prevInc - prevExp;
-    const netDelta = sav - prevNet;
-    const netSign = netDelta>=0?'+':'';
+    const prevNet = prevInc-prevExp;
+    const netDelta = sav-prevNet;
     const savRound = Math.round(savR);
     const target = 20;
-    const byCatM={};
-    txns.filter(t=>t.type==='expense').forEach(t=>{ byCatM[t.category]=(byCatM[t.category]||0)+Math.abs(t.amount); });
-    const topCat = Object.entries(byCatM).sort((a,b)=>b[1]-a[1])[0];
-    const budObj = getBudget();
-    const topBud = topCat ? Object.values(budObj[topCat[0]]||{}).reduce((s,v)=>s+v,0) : 0;
-    const topVsBud = topCat && topBud ? ((topCat[1]-topBud)/topBud*100) : null;
-    ac.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:4px 0">
+
+    // Callouts
+    const co = document.getElementById('month-callouts');
+    if(co) co.innerHTML = `
       <div style="padding:14px 16px;background:var(--s2);border-radius:12px;border-left:3px solid ${savRound>=target?'var(--green)':'var(--red)'}">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);font-weight:700;margin-bottom:6px">Savings Rate</div>
-        <div style="font-family:'Nunito Sans',sans-serif;font-size:22px;font-weight:700;color:${savRound>=target?'var(--green)':'var(--red)'}">${savRound}%</div>
+        <div style="font-family:'Nunito Sans',sans-serif;font-size:24px;font-weight:700;color:${savRound>=target?'var(--green)':'var(--red)'}">${savRound}%</div>
         <div style="font-size:11px;color:var(--t3);margin-top:4px">Target ${target}% · ${savRound>=target?'On track':'−'+(target-savRound)+'pts'}</div>
       </div>
       <div style="padding:14px 16px;background:var(--s2);border-radius:12px;border-left:3px solid ${netDelta>=0?'var(--green)':'var(--red)'}">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);font-weight:700;margin-bottom:6px">vs ${MONTHS_S[prevM-1]}</div>
-        <div style="font-family:'Nunito Sans',sans-serif;font-size:22px;font-weight:700;color:${netDelta>=0?'var(--green)':'var(--red)'}">${netSign}${fmt(netDelta)}</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:4px">Prior month net ${fmt(prevNet)}</div>
+        <div style="font-family:'Nunito Sans',sans-serif;font-size:24px;font-weight:700;color:${netDelta>=0?'var(--green)':'var(--red)'}">${netDelta>=0?'+':''}${fmt(netDelta)}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">Prior net ${fmt(prevNet)}</div>
       </div>
-      <div style="padding:14px 16px;background:var(--s2);border-radius:12px;border-left:3px solid var(--amber)">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);font-weight:700;margin-bottom:6px">Top Expense</div>
-        <div style="font-family:'Nunito Sans',sans-serif;font-size:18px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topCat?topCat[0]:'—'}</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:4px">${topCat?fmt(topCat[1]):'—'}${topVsBud!==null?' · '+(topVsBud>0?'+':'')+Math.round(topVsBud)+'% vs bud':''}</div>
-      </div>
-    </div>`;
+      <div style="padding:14px 16px;background:var(--s2);border-radius:12px;border-left:3px solid var(--accent)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);font-weight:700;margin-bottom:6px">Net Result</div>
+        <div style="font-family:'Nunito Sans',sans-serif;font-size:24px;font-weight:700;color:${sav>=0?'var(--green)':'var(--red)'}">${fmt(sav)}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">${fmt(inc)} in · ${fmt(exp)} out</div>
+      </div>`;
+
+    // Horizontal bar breakdown
+    const byCatM={};
+    txns.filter(t=>t.type==='expense').forEach(t=>{ byCatM[t.category]=(byCatM[t.category]||0)+Math.abs(t.amount); });
+    const catEntries=Object.entries(byCatM).sort((a,b)=>b[1]-a[1]);
+    const totM=catEntries.reduce((s,[,v])=>s+v,0)||1;
+    const maxV=catEntries[0]?.[1]||1;
+    const mb = document.getElementById('month-breakdown');
+    const budM2 = getBudget();
+    if(mb) mb.innerHTML = catEntries.length ? catEntries.map(([cat,val])=>{
+      const catBud = Object.values(budM2[cat]||{}).reduce((s,v)=>s+v,0);
+      const vsBud = catBud>0 ? ((val-catBud)/catBud*100) : null;
+      const vsStr = vsBud!==null ? `<span style="font-size:10px;font-weight:700;color:${vsBud>0?'var(--red)':'var(--green)'};margin-left:6px">${vsBud>0?'+':''}${Math.round(vsBud)}% vs bud</span>` : '';
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+        <div style="width:90px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat}</div>
+        <div style="flex:1;height:6px;background:var(--s2);border-radius:4px;overflow:hidden">
+          <div style="height:100%;border-radius:4px;background:${CAT_COLORS[cat]||'var(--accent)'};width:${val/maxV*100}%;transition:width 0.4s ease"></div>
+        </div>
+        <div style="width:40px;text-align:right;font-size:11px;color:var(--t3)">${Math.round(val/totM*100)}%</div>
+        <div style="display:flex;align-items:center;width:160px;justify-content:flex-end">
+          <div style="font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text)">${fmt(val)}</div>${vsStr}
+        </div>
+      </div>`;
+    }).join('') : '<div style="color:var(--t3);font-size:13px">No expenses this month</div>';
+
   } else {
-    // ── YTD: Net bar chart per month ──
-    if(chartTitle) chartTitle.textContent = 'Monthly Net — ' + viewYear;
+    // ── YTD: show chart + breakdown, hide month card ──
+    if(ytdCard) ytdCard.style.display='';
+    if(brkCard) brkCard.style.display='';
+    if(mthCard) mthCard.style.display='none';
+    if(chartTitle) chartTitle.textContent = 'Monthly Net';
+
+    const ac = document.getElementById('area-chart');
     const now = new Date();
-    const netData = [];
+    const netData=[];
     for(let m=1;m<=12;m++){
-      if(viewYear===new Date().getFullYear() && new Date(viewYear,m-1,1)>now) break;
+      if(viewYear===new Date().getFullYear()&&new Date(viewYear,m-1,1)>now) break;
       const mI=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===viewYear&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+t.amount,0);
       const mE=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===viewYear&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+Math.abs(t.amount),0);
       netData.push({l:MONTHS_S[m-1],net:mI-mE});
     }
     if(!netData.some(d=>d.net!==0)){
-      ac.innerHTML='<div class="empty" style="padding:40px 0"><div class="ei">📊</div>Import data to see chart</div>';
+      ac.innerHTML='<div class="empty" style="padding:30px 0"><div class="ei">📊</div>Import data to see chart</div>';
     } else {
-      const VW=560,VH=180,PL=44,PR=8,PT=16,PB=28;
-      const IW=VW-PL-PR, IH=VH-PT-PB;
+      // Use actual pixel width of container for accurate bar sizing
+      const CW = ac.clientWidth||460;
+      const CH = 180;
+      const PL=42,PR=8,PT=16,PB=26;
+      const IW=CW-PL-PR, IH=CH-PT-PB;
       const n=netData.length;
       const maxAbs=Math.max(...netData.map(d=>Math.abs(d.net)),1);
       const midY=PT+IH/2;
-      const barW=Math.max(Math.min(IW/n*0.55,28),8);
-      const px=i=>PL+i*(IW/n)+IW/n/2;
+      const slotW=IW/n;
+      const barW=Math.max(Math.min(slotW*0.6,32),6);
+      const px=i=>PL+i*slotW+slotW/2;
+
       const yTicks=[-1,-0.5,0,0.5,1].map(f=>{
-        const v=maxAbs*f, y=(midY-f*IH/2).toFixed(1);
-        const lbl=Math.abs(v)>=1000?Math.round(Math.abs(v)/1000)+'k':Math.round(Math.abs(v)).toString();
-        return `<text x="${PL-5}" y="${(parseFloat(y)+4).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a9db8" font-family="Nunito Sans">${f===0?'0':lbl}</text>`
-             + `<line x1="${PL}" y1="${y}" x2="${PL+IW}" y2="${y}" stroke="${f===0?'#b0b3c8':'#e4e6ef'}" stroke-width="${f===0?1.2:0.6}" stroke-dasharray="${f===0?'none':'3,3'}"/>`;
+        const y=(midY-f*IH/2).toFixed(1);
+        const v=Math.round(Math.abs(maxAbs*f));
+        const lbl=Math.round(Math.abs(maxAbs*f)).toLocaleString('de-DE');
+        return `<text x="${PL-5}" y="${(parseFloat(y)+4).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a9db8" font-family="Nunito Sans">${f===0?'0':lbl}</text>`
+             + `<line x1="${PL}" y1="${y}" x2="${PL+IW}" y2="${y}" stroke="${f===0?'#c4c6d6':'#eaebf2'}" stroke-width="${f===0?1:0.6}" stroke-dasharray="${f===0?'none':'3,3'}"/>`;
       }).join('');
+
       const bars=netData.map((d,i)=>{
         const x=px(i), net=d.net;
         const barH=Math.max(Math.abs(net)/maxAbs*IH/2,2);
         const y=net>=0?midY-barH:midY;
         const color=net>=0?'#30a46c':'#e5484d';
-        const lbl=Math.abs(net)>=1000?(net>=0?'+':'')+Math.round(net/1000)+'k':(net>=0?'+':'')+Math.round(net);
-        return `<rect x="${(x-barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" rx="3" fill="${color}" opacity="0.85"><title>${d.l}: ${fmt(net)}</title></rect>`
-             + `<text x="${x.toFixed(1)}" y="${(net>=0?y-5:y+barH+11).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="${color}" font-weight="600" font-family="Nunito Sans">${lbl}</text>`
-             + `<text x="${x.toFixed(1)}" y="${VH-8}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${d.l}</text>`;
+        const lbl=(net>=0?'+':'')+Math.round(net).toLocaleString('de-DE');
+        const lblY=net>=0?(y-5).toFixed(1):(y+barH+10).toFixed(1);
+        return `<rect x="${(x-barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${barH.toFixed(1)}" rx="3" fill="${color}" opacity="0.88"><title>${d.l}: ${fmt(net)}</title></rect>`
+             + `<text x="${x.toFixed(1)}" y="${lblY}" text-anchor="middle" font-size="8.5" fill="${color}" font-weight="600" font-family="Nunito Sans">${lbl}</text>`
+             + `<text x="${x.toFixed(1)}" y="${CH-8}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${d.l}</text>`;
       }).join('');
-      ac.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" style="display:block;width:100%;height:180px">${yTicks}${bars}</svg>`;
+
+      // Draw at exact pixel size — no scaling distortion
+      ac.innerHTML=`<svg width="${CW}" height="${CH}" style="display:block">${yTicks}${bars}</svg>`;
     }
   }
 
-  // ── DONUT ──
-  const expTxns=txns.filter(t=>t.type==='expense');
-  const byCat={}; expTxns.forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+Math.abs(t.amount);});
-  const tot=Object.values(byCat).reduce((s,v)=>s+v,0);
-  if(!tot){
-    document.getElementById('donut-svg').innerHTML='<circle cx="50" cy="50" r="36" fill="none" stroke="var(--s2)" stroke-width="13"/><text x="50" y="54" text-anchor="middle" fill="var(--t3)" font-size="7" font-family="Plus Jakarta Sans">No data</text>';
-    document.getElementById('donut-leg').innerHTML='<div style="font-size:13px;color:var(--t3);text-align:center">No expense data</div>';
-  } else {
-    const catsSorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-    const r2=36,ci=2*Math.PI*r2; let off=0;
-    const circles=catsSorted.map(([cat,val])=>{ const pct=val/tot,dash=pct*ci,gap=ci-dash; const arc=`<circle cx="50" cy="50" r="${r2}" fill="none" stroke="${CAT_COLORS[cat]||'#999'}" stroke-width="13" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-(off*ci)}" transform="rotate(-90 50 50)"><title>${cat}: ${fmt(val)}</title></circle>`; off+=pct; return arc; });
-    document.getElementById('donut-svg').innerHTML=`<circle cx="50" cy="50" r="36" fill="none" stroke="var(--s2)" stroke-width="13"/>${circles.join('')}<text x="50" y="43" text-anchor="middle" fill="var(--t3)" font-size="5" font-family="Plus Jakarta Sans" letter-spacing="0.8">TOTAL</text><text x="50" y="58" text-anchor="middle" fill="var(--text)" font-size="12" font-family="Nunito Sans" font-weight="700">${fmtK(tot)}</text>`;
-    document.getElementById('donut-leg').innerHTML=catsSorted.slice(0,6).map(([cat,val])=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0">
-          <div style="width:11px;height:11px;border-radius:50%;background:${CAT_COLORS[cat]||'#999'};flex-shrink:0"></div>
-          <span style="font-size:15px;font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat}</span>
-        </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:12px">
-          <div style="font-family:'Nunito Sans',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:-0.02em">${fmt(val)}</div>
-          <div style="font-size:12px;color:var(--t3);margin-top:2px">${(val/tot*100).toFixed(0)}% of spend</div>
-        </div>
-      </div>`).join('');
+  // ── EXPENSE BREAKDOWN: horizontal bar chart ──
+  if(!viewMonth) {
+    const expTxns2=txns.filter(t=>t.type==='expense');
+    const byCat2={}; expTxns2.forEach(t=>{byCat2[t.category]=(byCat2[t.category]||0)+Math.abs(t.amount);});
+    const tot2=Object.values(byCat2).reduce((s,v)=>s+v,0);
+    const leg=document.getElementById('donut-leg');
+    if(!leg) return;
+    if(!tot2){
+      leg.innerHTML='<div style="font-size:13px;color:var(--t3)">No expense data</div>';
+    } else {
+      const sorted2=Object.entries(byCat2).sort((a,b)=>b[1]-a[1]);
+      const maxV2=sorted2[0][1];
+      leg.innerHTML=sorted2.map(([cat,val])=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:82px;flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat}</div>
+          <div style="flex:1;height:7px;background:var(--s2);border-radius:4px;overflow:hidden">
+            <div style="height:100%;border-radius:4px;background:${CAT_COLORS[cat]||'var(--accent)'};width:${val/maxV2*100}%;transition:width 0.4s ease"></div>
+          </div>
+          <div style="width:38px;text-align:right;font-size:11px;color:var(--t3)">${Math.round(val/tot2*100)}%</div>
+          <div style="width:72px;text-align:right;font-family:'Nunito Sans',sans-serif;font-size:14px;font-weight:700;color:var(--text)">${fmt(val)}</div>
+        </div>`).join('');
+    }
   }
 
   // Extra cards (CM: my income / spouse income; personal: just net)
@@ -2570,104 +2600,42 @@ function renderExplore() {
   const rows = S.transactions.filter(t => {
     if (t.ignored) return false;
     const d = new Date(t.date);
-    if (yrs.length  && !yrs.includes(d.getFullYear()))   return false;
-    if (mons.length && !mons.includes(d.getMonth()+1))   return false;
-    if (cats.length && !cats.includes(t.category))       return false;
-    if (subs.length && !subs.includes(t.subcategory))    return false;
-    if (typs.length && !typs.includes(t.type))           return false;
+    if (yrs.length  && !yrs.includes(d.getFullYear()))  return false;
+    if (mons.length && !mons.includes(d.getMonth()+1))  return false;
+    if (cats.length && !cats.includes(t.category))      return false;
+    if (subs.length && !subs.includes(t.subcategory))   return false;
+    if (typs.length && !typs.includes(t.type))          return false;
     return true;
   });
 
-  const inc = rows.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp = rows.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
-  const net = inc - exp;
-  const savR = inc>0 ? (net/inc*100) : 0;
-  const txnCnt = rows.length;
-  const avgTxn = txnCnt>0 ? exp/Math.max(rows.filter(t=>t.type==='expense').length,1) : 0;
+  const inc    = rows.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp    = rows.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
+  const net    = inc - exp;
+  const savR   = inc>0 ? Math.round(net/inc*100) : 0;
+  const expCnt = rows.filter(t=>t.type==='expense').length;
 
-  // KPIs
+  // ── 4 KPIs ──
   document.getElementById('ex-kpis').innerHTML = `
     <div class="sc cc"><div class="sc-icon">↑</div><div class="sl">Income</div><div class="sv">${fmt(inc)}</div><span class="bdg bn">${rows.filter(t=>t.type==='income').length} entries</span></div>
-    <div class="sc cr"><div class="sc-icon">↓</div><div class="sl">Expenses</div><div class="sv">${fmt(exp)}</div><span class="bdg bn">${rows.filter(t=>t.type==='expense').length} entries</span></div>
-    <div class="sc ${net>=0?'cg':'cr'}"><div class="sc-icon">◆</div><div class="sl">Net</div><div class="sv">${fmt(net)}</div><span class="bdg ${savR>=20?'bu':savR>=0?'bn':'bd'}">${Math.round(savR)}% rate</span></div>
-    <div class="sc ca"><div class="sc-icon">~</div><div class="sl">Avg Expense</div><div class="sv">${fmt(avgTxn)}</div><span class="bdg bn">${txnCnt} transactions</span></div>
+    <div class="sc cr"><div class="sc-icon">↓</div><div class="sl">Expenses</div><div class="sv">${fmt(exp)}</div><span class="bdg bn">${expCnt} entries</span></div>
+    <div class="sc ${net>=0?'cg':'cr'}"><div class="sc-icon">◆</div><div class="sl">Net</div><div class="sv">${fmt(net)}</div><span class="bdg ${savR>=20?'bu':savR>=0?'bn':'bd'}">${savR}% savings rate</span></div>
+    <div class="sc ca"><div class="sc-icon">~</div><div class="sl">Avg Expense</div><div class="sv">${fmt(expCnt>0?exp/expCnt:0)}</div><span class="bdg bn">${rows.length} transactions</span></div>
   `;
 
-  // Monthly trend SVG
-  const yearForTrend = yrs.length===1 ? yrs[0] : new Date().getFullYear();
-  const trendData = [];
-  for(let m=1;m<=12;m++){
-    const mRows = rows.filter(t=>new Date(t.date).getFullYear()===yearForTrend&&new Date(t.date).getMonth()+1===m);
-    const mI = mRows.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-    const mE = mRows.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
-    trendData.push({l:MONTHS_S[m-1],i:mI,e:mE});
-  }
-  const tEl = document.getElementById('ex-trend');
-  if(!trendData.some(d=>d.i>0||d.e>0)){
-    tEl.innerHTML='<div class="empty" style="padding:30px 0"><div class="ei">📊</div>No data for this selection</div>';
-  } else {
-    // Grouped bar chart — no aspect ratio issues
-    const EVW=540, EVH=140, EPL=38, EPR=8, EPT=10, EPB=26;
-    const EIW=EVW-EPL-EPR, EIH=EVH-EPT-EPB;
-    const emx=Math.max(...trendData.map(d=>Math.max(d.i,d.e)),1);
-    const eslotW=EIW/12;
-    const ebarW=Math.max(Math.min(eslotW*0.36,14),4);
-    const egap=ebarW*0.6;
-    const epy=v=>EPT+EIH-(v/emx*EIH);
-    const eyTicks=[0,0.5,1].map(f=>{
-      const v=emx*f, ey=epy(v).toFixed(1);
-      const lbl=v>=1000?Math.round(v/1000)+'k':Math.round(v).toString();
-      return `<text x="${EPL-4}" y="${(epy(v)+4).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a9db8" font-family="Nunito Sans">${lbl}</text>`
-           + `<line x1="${EPL}" y1="${ey}" x2="${EPL+EIW}" y2="${ey}" stroke="#e4e6ef" stroke-width="0.7" stroke-dasharray="3,3"/>`;
-    }).join('');
-    const ebars=trendData.map((d,i)=>{
-      const cx=EPL+i*eslotW+eslotW/2;
-      const xi=cx-egap/2-ebarW, xe=cx+egap/2;
-      const bhi=Math.max(d.i/emx*EIH,1), bhe=Math.max(d.e/emx*EIH,1);
-      return `<rect x="${xi.toFixed(1)}" y="${(EPT+EIH-bhi).toFixed(1)}" width="${ebarW}" height="${bhi.toFixed(1)}" rx="2" fill="#6366f1" opacity="0.85"><title>${d.l} Income: ${fmt(d.i)}</title></rect>`
-           + `<rect x="${xe.toFixed(1)}" y="${(EPT+EIH-bhe).toFixed(1)}" width="${ebarW}" height="${bhe.toFixed(1)}" rx="2" fill="#f43f5e" opacity="0.8"><title>${d.l} Expenses: ${fmt(d.e)}</title></rect>`
-           + `<text x="${cx.toFixed(1)}" y="${EVH-8}" text-anchor="middle" font-size="8.5" fill="#9a9db8" font-family="Plus Jakarta Sans">${d.l}</text>`;
-    }).join('');
-    tEl.innerHTML=`<svg viewBox="0 0 ${EVW} ${EVH}" preserveAspectRatio="none" style="display:block;width:100%;height:140px">${eyTicks}${ebars}</svg>`;
-  }
-
-  // Category breakdown bars
-  const byCat = {};
-  rows.filter(t=>t.type==='expense').forEach(t=>{
-    // Group by subcategory if subcategory filter active, otherwise by category
-    const key = subs.length ? t.subcategory : t.category;
-    byCat[key] = (byCat[key]||0) + Math.abs(t.amount);
-  });
-  const catEntries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxVal = catEntries[0]?.[1]||1;
-  const bEl = document.getElementById('ex-breakdown');
-  const totalExp = catEntries.reduce((s,[,v])=>s+v,0)||1;
-  bEl.innerHTML = catEntries.length ? catEntries.map(([k,v])=>`
-    <div style="margin-bottom:11px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
-        <span style="font-size:13px;color:var(--t2);font-weight:600">${k||'Uncategorised'}</span>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-size:11px;color:var(--t3);font-weight:500">${Math.round(v/totalExp*100)}%</span>
-          <span style="font-family:'Nunito Sans',sans-serif;font-size:14px;color:var(--text);font-weight:700">${fmt(v)}</span>
-        </div>
-      </div>
-      <div style="height:5px;background:var(--s2);border-radius:3px;overflow:hidden">
-        <div style="height:100%;border-radius:3px;background:${CAT_COLORS[k]||'var(--accent)'};width:${v/maxVal*100}%;transition:width 0.5s ease"></div>
-      </div>
-    </div>`).join('') : '<div style="color:var(--t3);font-size:13px;text-align:center;padding:20px 0">No expense data</div>';
-
-  // Transaction rows
-  document.getElementById('ex-cnt').textContent = `${rows.length} record${rows.length!==1?'s':''}`;
-  document.getElementById('ex-rows').innerHTML = rows.length ? rows.slice(0,200).map(r=>{
-    const isInc=r.type==='income';
-    return `<tr>
-      <td style="font-family:'Nunito Sans',sans-serif;font-size:12px;color:var(--t3)">${new Date(r.date).toLocaleDateString('en-GB')}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.description||''}">${r.description||'—'}</td>
-      <td><span style="background:${CAT_COLORS[r.category]||'#999'}18;color:${CAT_COLORS[r.category]||'#999'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${r.category||'—'}</span></td>
-      <td style="color:var(--t3);font-size:12px">${r.subcategory||'—'}</td>
-      <td class="amtc r" style="color:${isInc?'var(--green)':'var(--red)'};font-weight:600">${isInc?'+':''}${fmt(Math.abs(r.amount))}</td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="5"><div class="empty"><div class="ei">🔍</div>No matching transactions</div></td></tr>';
+  // ── Transaction list ──
+  document.getElementById('ex-cnt').textContent = `${rows.length} transaction${rows.length!==1?'s':''}`;
+  document.getElementById('ex-rows').innerHTML = rows.length
+    ? rows.slice(0,300).map(r=>{
+        const isInc = r.type==='income';
+        return `<tr>
+          <td style="font-family:'Nunito Sans',sans-serif;font-size:12px;color:var(--t3);white-space:nowrap">${new Date(r.date).toLocaleDateString('en-GB')}</td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.description||''}">${r.description||'—'}</td>
+          <td><span style="background:${CAT_COLORS[r.category]||'#999'}18;color:${CAT_COLORS[r.category]||'#999'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap">${r.category||'—'}</span></td>
+          <td style="color:var(--t3);font-size:12px;white-space:nowrap">${r.subcategory||'—'}</td>
+          <td class="amtc r" style="color:${isInc?'var(--green)':'var(--red)'};font-weight:600;white-space:nowrap">${isInc?'+':''}${fmt(Math.abs(r.amount))}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="5"><div class="empty"><div class="ei">🔍</div>No matching transactions</div></td></tr>';
 }
 
 async function applyDBVisibility() {
