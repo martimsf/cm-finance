@@ -593,7 +593,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </div>
     <div class="card">
       <table class="dt">
-        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Category</th><th>Subcategory</th><th class="r">Amount</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Category</th><th>Subcategory</th><th class="r">Amount</th><th class="r">Balance</th><th></th></tr></thead>
         <tbody id="txn-tb"><tr><td colspan="7"><div class="empty"><div class="ei">🧾</div>No transactions yet.</div></td></tr></tbody>
       </table>
     </div>
@@ -2061,8 +2061,14 @@ function filterTxn() {
   const netExp=activeRows.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
   const net=netInc-netExp;
 
+  // Running balance
+  const sortedAsc=[...rows].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let runBal=0; const balMap={};
+  sortedAsc.forEach(r=>{ runBal+=r.type==='income'?r.amount:-Math.abs(r.amount); balMap[r.id]=runBal; });
+
   document.getElementById('txn-tb').innerHTML=rows.length?rows.map(r=>{
     const isInc=r.type==='income';
+    const bal=balMap[r.id]||0;
     const isIgnored=r.ignored||false;
     const catOpts=Object.keys(cats).map(c=>`<option${c===r.category?' selected':''}>${c}</option>`).join('');
     const subOpts=(cats[r.category]||[]).map(s=>`<option${s===r.subcategory?' selected':''}>${s}</option>`).join('');
@@ -2343,132 +2349,7 @@ function generateAISummary() {
   const style = `<style>
     .ai-s{display:block;margin-bottom:12px;padding:14px 16px;background:var(--s2);border-radius:10px;line-height:1.85;color:var(--t2);font-size:13px;border-left:3px solid var(--accent)}
     .ai-label{display:block;font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:8px;font-family:"Plus Jakarta Sans",sans-serif}
-  
-/* ══════════════════════════════════════════════
-   MOBILE RESPONSIVE
-══════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  :root { --topbar: 56px; }
-
-  /* Topbar */
-  .topbar { padding: 0 12px; gap: 6px; flex-wrap: nowrap; overflow-x: auto; }
-  .topbar-title { font-size: 14px; margin-right: 8px; white-space: nowrap; flex-shrink: 0; }
-  .db-btn { padding: 5px 10px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
-  .db-indicator { display: none; }
-
-  /* Sidebar: hidden */
-  .sb { display: none; }
-
-  /* Main */
-  .main { margin-left: 0; padding: 14px 14px 80px; }
-
-  /* ── SCROLLABLE BOTTOM NAV ── */
-  .mob-nav {
-    display: block !important;
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--white); border-top: 1px solid var(--border);
-    z-index: 300; height: 62px;
-    box-shadow: 0 -2px 12px rgba(79,70,229,0.08);
-    overflow: hidden;
-  }
-  .mob-nav-inner {
-    display: flex; align-items: center;
-    height: 100%; padding: 0 4px;
-    overflow-x: auto; overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 2px;
-  }
-  .mob-nav-inner::-webkit-scrollbar { display: none; }
-  .mob-tab {
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 6px 10px; border-radius: 10px; cursor: pointer;
-    font-size: 9.5px; font-weight: 600; color: var(--t3);
-    transition: all 0.13s; flex-shrink: 0;
-    border: none; background: transparent;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    white-space: nowrap; min-width: 52px;
-  }
-  .mob-tab .mob-icon { font-size: 18px; line-height: 1; }
-  .mob-tab.on { color: var(--accent); }
-  .mob-tab.on .mob-icon { transform: translateY(-1px); }
-
-  /* Grids */
-  .g4 { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .g3 { grid-template-columns: 1fr; gap: 10px; }
-  .g2 { grid-template-columns: 1fr; gap: 10px; }
-  .g21 { grid-template-columns: 1fr; gap: 10px; }
-
-  /* Page header */
-  .ph { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
-  .ha { flex-wrap: wrap; gap: 6px; }
-  .ptitle { font-size: 20px; }
-
-  /* Stat cards */
-  .sc { padding: 12px 14px; }
-  .sv { font-size: 18px; }
-  .sc-icon { width: 26px; height: 26px; font-size: 11px; margin-bottom: 8px; }
-  .card { padding: 14px; }
-
-  /* P&L — sticky first column, scrollable */
-  .pnl-tbl { font-size: 11px; }
-  .pnl-tbl td, .pnl-tbl th { padding: 6px 8px; white-space: nowrap; }
-
-  /* ── TRANSACTIONS: single line, smaller, horizontal scroll ── */
-  #txn-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .dt { font-size: 11px; white-space: nowrap; }
-  .dt th, .dt td { padding: 6px 5px; }
-  .ie-sel { font-size: 11px; padding: 2px 4px; max-width: 90px; }
-  .btn-sm { font-size: 10px; padding: 3px 6px; }
-
-  /* Month nav */
-  .mnc { min-width: 80px; font-size: 12px; }
-
-  /* PnL nav tabs */
-  .pnl-nav { width: 100%; }
-  .pnl-tab { flex: 1; text-align: center; font-size: 12px; padding: 7px 8px; }
-
-  /* Import area */
-  .scr-a { max-height: 300px; }
-
-  /* AI insight */
-  .ai-s { font-size: 12px; padding: 12px 13px; }
-
-  /* ── EXPLORE: fit to screen ── */
-  #ex-filters { flex-direction: column; gap: 8px; }
-  .dd-wrap { width: 100%; }
-  .dd-btn { width: 100%; }
-  .dd-menu { width: 100%; position: relative; top: 4px; }
-  #ex-kpis { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  #ex-charts { grid-template-columns: 1fr !important; }
-  #ex-trend, #ex-breakdown { width: 100%; }
-
-  /* Donut: stack on mobile */
-  #donut-wrap { flex-direction: column !important; align-items: center !important; }
-  #donut-svg { width: 130px !important; height: 130px !important; }
-
-  /* Goals */
-  #goals-w .g3 { grid-template-columns: 1fr; }
-}
-
-@media (min-width: 769px) {
-  .mob-nav { display: none !important; }
-}
-
-
-/* ── CHECKBOX DROPDOWN FILTERS ── */
-.dd-wrap { position:relative; }
-.dd-btn {
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:8px 12px; min-width:120px; background:var(--white);
-  border:1.5px solid var(--border); border-radius:8px; cursor:pointer;
-  font-size:13px; font-family:'Plus Jakarta Sans',sans-serif; color:var(--text);
-  white-space:nowrap; transition:border-color 0.13s;
-}
-.dd-btn:hover { border-color:var(--accent); }
-.dd-btn.active { border-color:var(--accent); color:var(--accent); }
-.dd-arr { font-size:10px; color:var(--t3); transition:transform 0.13s; }
-.dd-btn.active .dd-arr { transform:rotate(180deg); color:var(--accent); }
+  .dd-btn.active .dd-arr { transform:rotate(180deg); color:var(--accent); }
 .dd-menu {
   display:none; position:absolute; top:calc(100% + 6px); left:0;
   background:var(--white); border:1.5px solid var(--border); border-radius:10px;
@@ -2534,25 +2415,40 @@ function buildExploreFilters() {
 }
 
 function exCatChange() {
-  const cat = document.getElementById('ex-cat').value;
-  const cats = getCats();
-  const sub = document.getElementById('ex-sub');
-  if (cat && cats[cat]) {
-    sub.innerHTML = '<option value="">All subcategories</option>' +
-      cats[cat].map(s=>`<option>${s}</option>`).join('');
-  } else {
-    sub.innerHTML = '<option value="">All subcategories</option>';
+  // Get selected categories from checkbox dropdown
+  const selCats = getDDVals('cat');
+  const allCats = getCats();
+  // Update subcategory dropdown to only show subs for selected categories
+  const subs = selCats.length
+    ? selCats.flatMap(cat => allCats[cat] || [])
+    : Object.values(allCats).flat();
+  const uniqueSubs = [...new Set(subs)].sort();
+  const subMenu = document.getElementById('dd-sub-menu');
+  if (subMenu) {
+    // Preserve currently checked subs if still valid
+    const prevChecked = new Set(getDDVals('sub'));
+    subMenu.innerHTML = uniqueSubs.map(s =>
+      `<label class="dd-item"><input type="checkbox" value="${s}" ${prevChecked.has(s)?'checked':''} onchange="ddChange('sub')"> ${s}</label>`
+    ).join('');
   }
+  updateDDLabel('sub', 'All subcategories');
   renderExplore();
 }
 
 function clearExplore() {
-  document.getElementById('ex-yr').value='2026';
-  document.getElementById('ex-mon').value='';
-  document.getElementById('ex-cat').value='';
-  document.getElementById('ex-sub').innerHTML='<option value="">All subcategories</option>';
-  document.getElementById('ex-type').value='';
-  renderExplore();
+  ['yr','mon','cat','sub','type'].forEach(key => {
+    document.querySelectorAll(`#dd-${key}-menu input`).forEach(i => i.checked = false);
+  });
+  // Default year to current
+  const curYr = new Date().getFullYear().toString();
+  const yrInput = document.querySelector(`#dd-yr-menu input[value="${curYr}"]`);
+  if (yrInput) yrInput.checked = true;
+  ['yr','mon','cat','sub','type'].forEach(key => {
+    const labels = {yr:curYr, mon:'All months', cat:'All categories', sub:'All subcategories', type:'All types'};
+    updateDDLabel(key, labels[key]);
+  });
+  // Rebuild subcategory list to show all
+  exCatChange();
 }
 
 // ── DROPDOWN CHECKBOX HELPERS ──
