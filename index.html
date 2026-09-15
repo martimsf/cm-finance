@@ -416,11 +416,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div class="nl">Analytics</div>
     <div class="ni" onclick="nav('pnl',this)"><span class="nx">⊞</span> P&amp;L</div>
     <div class="ni" onclick="nav('budget',this)"><span class="nx">◫</span> Budget</div>
-    <div class="ni" id="nav-goals" onclick="nav('goals',this)"><span class="nx">◎</span> Goals</div>
+    <div class="ni" id="nav-planning" onclick="nav('planning',this)"><span class="nx">◎</span> Planning</div>
   </div>
   <div class="ns" style="margin-top:4px">
     <div class="nl">Management</div>
-    <div class="ni" id="nav-accounts" onclick="nav('accounts',this)"><span class="nx">▣</span> Accounts</div>
     <div class="ni" onclick="nav('transactions',this)"><span class="nx">≡</span> Transactions <span id="flag-badge" style="display:none;background:var(--amber);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px">0</span></div>
     <div class="ni" onclick="nav('explore',this)"><span class="nx">◉</span> Explore</div>
   </div>
@@ -436,8 +435,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <button class="mob-tab" onclick="nav('budget',this);mobNav(this)"><span class="mob-icon">◫</span>Budget</button>
     <button class="mob-tab" onclick="nav('transactions',this);mobNav(this)"><span class="mob-icon">≡</span>Txns</button>
     <button class="mob-tab" onclick="nav('explore',this);mobNav(this)"><span class="mob-icon">◉</span>Explore</button>
-    <button class="mob-tab" id="mob-goals-btn" onclick="nav('goals',this);mobNav(this)"><span class="mob-icon">◎</span>Goals</button>
-    <button class="mob-tab" id="mob-accounts-btn" onclick="nav('accounts',this);mobNav(this)"><span class="mob-icon">▣</span>Accounts</button>
+    <button class="mob-tab" id="mob-planning-btn" onclick="nav('planning',this);mobNav(this)"><span class="mob-icon">◎</span>Planning</button>
   </div>
 </nav>
 
@@ -448,10 +446,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div class="ph">
       <div><div class="ptitle">Dashboard</div><div class="psub" id="ov-sub">Year to Date</div></div>
       <div class="ha">
-        <div class="mn">
-          <button class="mna" onclick="chMon(-1)">‹</button>
-          <span class="mnc" id="mon-d">All Months</span>
-          <button class="mna" onclick="chMon(1)">›</button>
+        <div class="dd-wrap" id="dd-ov-mon">
+          <button class="dd-btn" onclick="toggleDD('dd-ov-mon')" style="min-width:130px">
+            <span id="dd-ov-mon-lbl">All Months</span><span class="dd-arr">▾</span>
+          </button>
+          <div class="dd-menu" id="dd-ov-mon-menu" style="min-width:150px;right:0;left:auto">
+            <label class="dd-item"><input type="checkbox" value="0" onchange="ovMonChange()"> All Months</label>
+            <label class="dd-item"><input type="checkbox" value="1" onchange="ovMonChange()"> January</label>
+            <label class="dd-item"><input type="checkbox" value="2" onchange="ovMonChange()"> February</label>
+            <label class="dd-item"><input type="checkbox" value="3" onchange="ovMonChange()"> March</label>
+            <label class="dd-item"><input type="checkbox" value="4" onchange="ovMonChange()"> April</label>
+            <label class="dd-item"><input type="checkbox" value="5" onchange="ovMonChange()"> May</label>
+            <label class="dd-item"><input type="checkbox" value="6" onchange="ovMonChange()"> June</label>
+            <label class="dd-item"><input type="checkbox" value="7" onchange="ovMonChange()"> July</label>
+            <label class="dd-item"><input type="checkbox" value="8" onchange="ovMonChange()"> August</label>
+            <label class="dd-item"><input type="checkbox" value="9" onchange="ovMonChange()"> September</label>
+            <label class="dd-item"><input type="checkbox" value="10" onchange="ovMonChange()"> October</label>
+            <label class="dd-item"><input type="checkbox" value="11" onchange="ovMonChange()"> November</label>
+            <label class="dd-item"><input type="checkbox" value="12" onchange="ovMonChange()"> December</label>
+          </div>
         </div>
       </div>
     </div>
@@ -461,6 +474,38 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
       <div class="sc cg"><div class="sc-icon">◆</div><div class="sl">Net Savings</div><div class="sv" id="k-sav">€0</div><div id="k-sav-b"><span class="bdg bn">—</span></div><div class="bt"><div class="bf" id="sav-bar" style="width:0%;background:var(--green)"></div></div></div>
       <div class="sc cb"><div class="sc-icon">▲</div><div class="sl">Net Worth</div><div class="sv" id="k-nw">€0</div><div><span class="bdg bn">Accounts total</span></div><div class="bt"><div class="bf" style="width:100%;background:var(--blue)"></div></div></div>
     </div>
+    <!-- Finance Health Strip -->
+    <div class="card" style="padding:14px 20px;margin-bottom:12px" id="health-strip">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:center">
+        <!-- Savings Rate Trend -->
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:8px">Savings Trend</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="health-sparkline" style="display:flex;align-items:flex-end;gap:3px;height:28px"></div>
+            <span id="health-trend-arrow" style="font-size:18px"></span>
+          </div>
+          <div id="health-trend-label" style="font-size:11px;color:var(--t3);margin-top:4px"></div>
+        </div>
+        <!-- Fixed vs Variable -->
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:8px">Fixed vs Discretionary</div>
+          <div style="height:8px;border-radius:4px;overflow:hidden;background:var(--s2);margin-bottom:6px">
+            <div id="health-fv-bar" style="height:100%;background:#6366f1;border-radius:4px;transition:width 0.4s ease"></div>
+          </div>
+          <div id="health-fv-label" style="font-size:11px;color:var(--t3)"></div>
+        </div>
+        <!-- Budget Adherence -->
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);margin-bottom:8px">Budget Adherence</div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <div id="health-adherence" style="font-family:'Nunito Sans',sans-serif;font-size:28px;font-weight:700"></div>
+            <div style="font-size:12px;color:var(--t3)">of categories on track</div>
+          </div>
+          <div id="health-adherence-label" style="font-size:11px;color:var(--t3);margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="g21" style="margin-bottom:12px">
       <!-- YTD chart card — hidden in month view -->
       <div class="card" style="padding:18px 20px" id="ytd-chart-card">
@@ -538,26 +583,28 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 
   <!-- GOALS -->
-  <div class="page" id="page-goals">
+  <!-- PLANNING (Goals + Accounts merged) -->
+  <div class="page" id="page-planning">
     <div class="ph">
-      <div><div class="ptitle">Financial Goals</div><div class="psub">Track progress toward what matters</div></div>
-      <button class="btn btn-p" onclick="openM('goal')">+ New Goal</button>
+      <div><div class="ptitle">Planning</div><div class="psub">Goals &amp; account balances</div></div>
+      <div class="ha">
+        <button class="btn btn-g" onclick="openM('account')">+ Balance</button>
+        <button class="btn btn-p" onclick="openM('goal')">+ Goal</button>
+      </div>
     </div>
-    <div id="goals-w"><div class="empty"><div class="ei">🎯</div>No goals yet.</div></div>
-  </div>
-
-  <!-- ACCOUNTS -->
-  <div class="page" id="page-accounts">
-    <div class="ph">
-      <div><div class="ptitle">Accounts</div><div class="psub">Balances &amp; evolution</div></div>
-      <button class="btn btn-p" onclick="openM('account')">+ Update Balance</button>
+    <!-- Goals -->
+    <div class="ct" style="margin-bottom:10px">Financial Goals</div>
+    <div id="goals-w" style="margin-bottom:20px"><div class="empty"><div class="ei">🎯</div>No goals yet.</div></div>
+    <!-- Accounts -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="ct">Accounts</div>
+      <div class="mn"><button class="mna" onclick="accChMon(-1)">‹</button><span class="mnc" id="acc-mon-d" style="min-width:110px">All Time</span><button class="mna" onclick="accChMon(1)">›</button></div>
     </div>
-    <div style="margin-bottom:14px"><div class="mn"><button class="mna" onclick="accChMon(-1)">‹</button><span class="mnc" id="acc-mon-d" style="min-width:110px">All Time</span><button class="mna" onclick="accChMon(1)">›</button></div></div>
     <div class="g2">
       <div class="card"><div class="ct">Current Balances</div><div id="acc-list"><div class="empty"><div class="ei">🏦</div>No data yet.</div></div></div>
       <div class="card"><div class="ct">Balance Evolution</div><div id="acc-chart"><div class="empty"><div class="ei">📈</div>Add multiple snapshots to see evolution.</div></div></div>
     </div>
-    <div class="card"><div class="ct">Snapshot History</div><div id="acc-hist"><div class="empty"><div class="ei">📉</div>No history yet.</div></div></div>
+    <div class="card" style="margin-top:12px"><div class="ct">Snapshot History</div><div id="acc-hist"><div class="empty"><div class="ei">📉</div>No history yet.</div></div></div>
   </div>
 
   <!-- TRANSACTIONS -->
@@ -569,16 +616,27 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         <button class="btn btn-p" onclick="openM('txn')">+ Add Manually</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
       <input class="fi" style="width:170px" placeholder="Search…" id="s-q" oninput="filterTxn()">
       <select class="fs" style="width:145px" id="s-cat" onchange="filterTxn()"><option value="">All Categories</option></select>
-      <select class="fs" style="width:118px" id="s-mon" onchange="filterTxn()">
-        <option value="">All Months</option>
-        <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-        <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-        <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-      </select>
+      <!-- Month multi-select dropdown -->
+      <div class="dd-wrap" id="dd-txn-mon">
+        <button class="dd-btn" onclick="toggleDD('dd-txn-mon')" style="min-width:120px"><span id="dd-txn-mon-lbl">All Months</span><span class="dd-arr">▾</span></button>
+        <div class="dd-menu" id="dd-txn-mon-menu" style="min-width:140px">
+          <label class="dd-item"><input type="checkbox" value="1" onchange="filterTxn()"> January</label>
+          <label class="dd-item"><input type="checkbox" value="2" onchange="filterTxn()"> February</label>
+          <label class="dd-item"><input type="checkbox" value="3" onchange="filterTxn()"> March</label>
+          <label class="dd-item"><input type="checkbox" value="4" onchange="filterTxn()"> April</label>
+          <label class="dd-item"><input type="checkbox" value="5" onchange="filterTxn()"> May</label>
+          <label class="dd-item"><input type="checkbox" value="6" onchange="filterTxn()"> June</label>
+          <label class="dd-item"><input type="checkbox" value="7" onchange="filterTxn()"> July</label>
+          <label class="dd-item"><input type="checkbox" value="8" onchange="filterTxn()"> August</label>
+          <label class="dd-item"><input type="checkbox" value="9" onchange="filterTxn()"> September</label>
+          <label class="dd-item"><input type="checkbox" value="10" onchange="filterTxn()"> October</label>
+          <label class="dd-item"><input type="checkbox" value="11" onchange="filterTxn()"> November</label>
+          <label class="dd-item"><input type="checkbox" value="12" onchange="filterTxn()"> December</label>
+        </div>
+      </div>
       <select class="fs" style="width:90px" id="s-yr" onchange="filterTxn()">
         <option value="">All Years</option>
         <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
@@ -588,6 +646,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         <option value="income">Income only</option>
         <option value="expense">Expenses only</option>
         <option value="ignored">Ignored only</option>
+        <option value="flagged">🚩 Flagged</option>
       </select>
       <button class="btn btn-g btn-sm" onclick="clearF()">Clear</button>
     </div>
@@ -976,7 +1035,7 @@ async function saveTxn(t) {
     id: t.id, date: t.date, description: t.description||'',
     amount: t.amount, type: t.type, category: t.category||'',
     subcategory: t.subcategory||'', person: t.person||null,
-    ignored: t.ignored||false
+    ignored: t.ignored||false, flagged: t.flagged||false
   };
   await sbFetch('POST', tbl('transactions'), row, '?on_conflict=id');
 }
@@ -1006,94 +1065,227 @@ async function saveBudgetDB(b) {
 // ══════════════════════════════════════════════════════════
 
 // CM income sources
+// ══════════════════════════════════════════════════════════
+// KEYWORD RULES — Layer 2 of auto-classifier
+// Broad patterns: covers merchant name variations, abbreviations,
+// Spanish/Portuguese/English variants. History (Layer 1) takes priority.
+// ══════════════════════════════════════════════════════════
+
 const CM_INC = [
-  {p:/payment from.*almeida pulido|payment from.*carlota maria/i, sub:'Salary'},
-  {p:/transfer from.*martim potier|payment from.*martim potier/i, sub:'Salary'},
-  {p:/payment from.*sanitas|payment from.*seguros/i, sub:'Insurance'},
-  {p:/payment from.*moro peralta|yummy mummy|mom care/i, sub:'Extra'},
-  {p:/transfer from.*carlota.*pereira/i, sub:'Insurance'},
-];
-const CM_EXP = [
-  {p:/abigail condori/i, c:'House', s:'Housekeeper'},
-  {p:/victoria cristina mill/i, c:'House', s:'Rent'},
-  {p:/remolonas|intermarché|intermarche|mercadona|auchan|hipercor|continente|pingo doce|lidl|levaduramadre|sanchez romero|frutas pablos|spar|aldi/i, c:'House', s:'Groceries'},
-  {p:/amazon/i, c:'House', s:'Amazon'},
-  {p:/sklum|zara home|leroy merlin|ikea/i, c:'House', s:'Furniture'},
-  {p:/hofmann|megaprimor|papeleria/i, c:'House', s:'Shopping/Gift'},
-  {p:/don papel/i, c:'House', s:'Other.H'},
-  {p:/clinica lillo|grupo prisema|erica moreno|pediatr/i, c:'Health', s:'Baby Doctor'},
-  {p:/farmacia|farmácia|a tua farm|boots|wells\b/i, c:'Health', s:'Pharmacy'},
-  {p:/gocco|vinted|mango(?!.*restaurant)/i, c:'Baby', s:'Clothing'},
-  {p:/grand slam|ballet|natação|swimming/i, c:'Baby', s:'Activities'},
-  {p:/creche|jardim.*infan|colegio|escola/i, c:'Baby', s:'School'},
-  {p:/ballenoil|galp|repsol|bp\b|shell|gasolinera/i, c:'Transport', s:'Fuel'},
-  {p:/brisa|bip drive|via verde|portagem/i, c:'Transport', s:'Tolls'},
-  {p:/telpark|parking|parque|interparking|ayuntamiento.*parking/i, c:'Transport', s:'Parking'},
-  {p:/uber(?! eats)|bolt\b|taxi|cabify/i, c:'Transport', s:'Uber/Taxi'},
-  {p:/lamonarracha|grosso napoletano|honest greens|pastelaria|garrestoril|bizcocho|campo simbolico|restaurante|mcdonalds|mcdonald|nando|sushi|pizza|bistro|tasca|café|cafe\b/i, c:'Personal', s:'Dining Out'},
-  {p:/glovo|uber eats|deliveroo/i, c:'Personal', s:'Food Delivery'},
-  {p:/air europa|iberia|ryanair|easyjet|tap\b|vueling|airbnb|hotel|booking\.com/i, c:'Personal', s:'Travel'},
-  {p:/trading 212|degiro|etf|broker|vanguard/i, c:'Personal', s:'Investments'},
-  {p:/netflix|spotify|hbo|disney|gym|fitness/i, c:'Personal', s:'Lifestyle Activities'},
-  // Transfer context rules
-  {p:/transfer to.*abigail/i, c:'House', s:'Housekeeper'},
-  {p:/transfer to.*victoria/i, c:'House', s:'Rent'},
-  {p:/transfer to.*teresa/i, c:'Personal', s:'Dining Out'},
-  {p:/transfer to.*joao bernardo|transfer to.*joao.*queiroz/i, c:'Personal', s:'Dining Out'},
-  {p:/transfer to.*nuno/i, c:'Personal', s:'Lifestyle Activities'},
-  {p:/transfer to.*martim|transfer to.*carlota/i, c:'House', s:'Bills'},
+  // Salaries — specific names take priority
+  {p:/almeida pulido|carlota maria|martim potier|potier/i, sub:'Salary'},
+  {p:/salary|salario|salário|nomina|nómina|ordenado|payroll|wage/i, sub:'Salary'},
+  // Insurance reimbursements
+  {p:/sanitas|seguros|axa|adeslas|mapfre|allianz|mutua|reembolso|reimburs/i, sub:'Insurance'},
+  // Extra income
+  {p:/moro peralta|yummy mummy|mom care|freelance|consulting|honorario/i, sub:'Extra'},
+  // Interest
+  {p:/interest|interés|rendimento|yield|dividend|dividen/i, sub:'Interest'},
 ];
 
-// Personal (Martim/Carlota) income sources
+const CM_EXP = [
+  // ── HOUSE ──
+  // Rent — exact landlord name only
+  {p:/victoria cristina mill[aá]n/i, c:'House', s:'Rent'},
+  // Housekeeper
+  {p:/abigail condori|abigail|limpieza|limpeza|cleaning lady|femme.menage/i, c:'House', s:'Housekeeper'},
+  // Groceries — supermarkets ES/PT + online
+  {p:/mercadona|auchan|hipercor|el corte ingles.*alimenta|carrefour|dia|lidl|aldi|spar|eroski|consum|simply|alcampo|caprabo/i, c:'House', s:'Groceries'},
+  {p:/intermarché|intermarche|remolonas|pingo doce|continente|jumbo|minipreco|levaduramadre|sanchez romero|frutas pablos|verdulería|verduleria|frutería|fruteria/i, c:'House', s:'Groceries'},
+  {p:/getir|gorillas|too good to go|la despensa/i, c:'House', s:'Groceries'},
+  // Amazon
+  {p:/amazon/i, c:'House', s:'Amazon'},
+  // Bills — utilities, telecoms
+  {p:/endesa|iberdrola|naturgy|gas natural|union fenosa|enel|edp|aguas|canal.*isabel|acciona.*agua/i, c:'House', s:'Bills'},
+  {p:/movistar|vodafone|orange|masmovil|yoigo|jazztel|o2|digi|simyo|pepephone/i, c:'House', s:'Bills'},
+  {p:/comunidad.*propietarios|cuota.*comunidad|ibi|impuesto.*bienes|basura/i, c:'House', s:'Bills'},
+  // Furniture & home
+  {p:/ikea|leroy merlin|sklum|zara home|el corte ingles.*hogar|conforama|bauhaus|brico|aki|sodimac/i, c:'House', s:'Furniture'},
+  // Gifts & stationery
+  {p:/hofmann|megaprimor|papeleria|fnac|tiger|casa.*regalo|hallmark|photobox/i, c:'House', s:'Shopping/Gift'},
+  // Other house
+  {p:/don papel|ferreteria|drogueria|servi.*hogar/i, c:'House', s:'Other.H'},
+
+  // ── HEALTH ──
+  // Baby doctor
+  {p:/clinica lillo|grupo prisema|erica moreno|pediatr|neonat|puericult/i, c:'Health', s:'Baby Doctor'},
+  // Adult doctor
+  {p:/clinica|hospital(?! de dia)|doctor|dr|médico|medico|dentist|dentista|fisio|traumatol|dermato|ginecol|oftalm|psicol|nutricion|endocrino|cardiol/i, c:'Health', s:'Adult Doctor'},
+  // Pharmacy
+  {p:/farmacia|farmácia|farmacia|parafarmacia|a tua farm|boots|wells|cruz verde|la salud/i, c:'Health', s:'Pharmacy'},
+
+  // ── BABY ──
+  // Clothing
+  {p:/gocco|vinted|chicco|mothercare|prenatal|kiabi|zippy|name it|boboli|mayoral/i, c:'Baby', s:'Clothing'},
+  // Nursery & school
+  {p:/creche|guarderia|guardería|jardim.*infan|colegio|escuela|escola|academia|nursery|daycare/i, c:'Baby', s:'Nursery'},
+  // Toys
+  {p:/imaginarium|toy.*planet|toys.*r.*us|juguete|brinquedo|hamleys|lego/i, c:'Baby', s:'Toys'},
+  // Activities
+  {p:/grand slam|ballet|natacion|natação|swimming|piscina|gimnasia|gymboree|baby.*gym|kids.*class|actividad/i, c:'Baby', s:'Activities'},
+
+  // ── TRANSPORT ──
+  // Fuel
+  {p:/ballenoil|galp|repsol|bp|shell|cepsa|total|esso|gasolinera|combustivel|gasoil|gasolina/i, c:'Transport', s:'Fuel'},
+  // Tolls
+  {p:/brisa|bip.?drive|via verde|portagem|peaje|ap-7|ap-68|oc40|telepass/i, c:'Transport', s:'Tolls'},
+  // Parking
+  {p:/telpark|empark|parking|interparking|parkia|saba|aparcamiento|parquimetro|parquímetro|ayuntamiento.*zona/i, c:'Transport', s:'Parking'},
+  // Taxi/rideshare
+  {p:/uber(?!.*eats)|bolt|cabify|taxi|mytaxi|free now|cooltra|blablacar/i, c:'Transport', s:'Uber/Taxi'},
+  // Car service
+  {p:/midas|norauto|kwik.?fit|aurgi|taller|mecanico|mecánico|itv|inspeccion.*vehiculo|autolavado|lavado.*coche/i, c:'Transport', s:'Car Service'},
+  // Public transport
+  {p:/metro|renfe|cercanias|cercanías|autocarro|autobus|autobús|emt|tmb|ctm|commuter|transporte.*publico/i, c:'Transport', s:'Uber/Taxi'},
+
+  // ── PERSONAL ──
+  // Dining out — restaurants, cafes, bars
+  {p:/restaurante|restaurant|bistro|brasserie|tasca|taberna|bodega|mesón|meson|trattoria|osteria/i, c:'Personal', s:'Dining Out'},
+  {p:/lamonarracha|grosso|honest greens|garrestoril|bizcocho|campo simbolico|lateral|lateral |cerveceria|madrileño/i, c:'Personal', s:'Dining Out'},
+  {p:/mcdonalds|mcdonald|kfc|burger king|five guys|shake shack|nando|popeyes|dominos|telepizza/i, c:'Personal', s:'Dining Out'},
+  {p:/sushi|ramen|wok|thai|indio|kebab|shawarma|falafel|hummus/i, c:'Personal', s:'Dining Out'},
+  {p:/pasteleria|pastelería|panaderia|panadería|cafeteria|cafetería|café|cafe|coffee|starbucks|costa coffee|negro|brunch/i, c:'Personal', s:'Dining Out'},
+  {p:/pizza|pizzeria|pizzería/i, c:'Personal', s:'Dining Out'},
+  // Deliveries
+  {p:/glovo|uber.?eats|deliveroo|just.?eat|domicilio|a domicilio/i, c:'Personal', s:'Deliveries'},
+  // Activities & leisure
+  {p:/cine|cinema|teatro|teatro|concert|concierto|ticketmaster|eventbrite|fiebre|espectaculo/i, c:'Personal', s:'Activities'},
+  {p:/fitness|holmes|virgin.*active|metropolitan|padel|tenis|golf|pádel|deporte/i, c:'Personal', s:'Activities'},
+  // Clothing & personal shopping
+  {p:/zara|h&m|mango|pull.?bear|bershka|stradivarius|massimo dutti|el corte ingles.*moda|primark|uniqlo|asos|zalando/i, c:'Personal', s:'Clothing'},
+  {p:/peluqueria|peluquería|barberia|barbería|estetica|estética|nails|uñas|spa|masaje/i, c:'Personal', s:'Clothing'},
+  // Travel
+  {p:/iberia|air europa|ryanair|easyjet|tap|vueling|norwegian|wizz|binter|level|wizzair/i, c:'Personal', s:'Travel'},
+  {p:/airbnb|booking\.com|hotels\.com|hostal|hostel|hotel|apartamento.*vacac|renfe.*ave|ave.*renfe/i, c:'Personal', s:'Travel'},
+  // Investments
+  {p:/trading 212|degiro|etf|vanguard|blackrock|fidelity|myinvestor|indexa|finizens|roboadvisor/i, c:'Personal', s:'Investments'},
+  // Subscriptions
+  {p:/netflix|hbo|disney|amazon prime|apple tv|filmin|mubi|rakuten/i, c:'Personal', s:'Subscriptions'},
+  {p:/spotify|apple music|tidal|deezer|amazon music/i, c:'Personal', s:'Subscriptions'},
+  {p:/chatgpt|openai|anthropic|google.*one|icloud|dropbox|adobe|microsoft 365|office 365/i, c:'Personal', s:'Subscriptions'},
+  {p:/el pais|el mundo|expansion|the economist|financial times|kindle|audible/i, c:'Personal', s:'Subscriptions'},
+
+  // ── FINANCE ──
+  {p:/transfer to.*martim|transfer to.*carlota|aportacion|aportación|contribucion|contribución/i, c:'Finance', s:'Joint Contribution'},
+  {p:/transfer to.*abigail/i, c:'House', s:'Housekeeper'},
+];
+
+// ── PERSONAL DASHBOARDS (Martim / Carlota) ──
 const PERSONAL_INC = [
-  {p:/payment from|transfer from|salary|salário|ordenado/i, sub:'Salary'},
-  {p:/sanitas|seguros|axa|adeslas/i, sub:'Reimbursements'},
+  {p:/almeida pulido|carlota maria|martim potier|potier/i, sub:'Salary'},
+  {p:/salary|salario|salário|nomina|nómina|ordenado|payroll|wage/i, sub:'Salary'},
+  {p:/sanitas|seguros|axa|adeslas|mapfre|reembolso|reimburs/i, sub:'Reimbursements'},
+  {p:/bonus|variable|incentivo|comision|comisión/i, sub:'Bonus'},
+  {p:/interest|interés|rendimento|yield|dividend/i, sub:'Interest'},
 ];
 const PERSONAL_EXP = [
-  {p:/mercadona|auchan|lidl|continente|pingo doce|intermarché|spar/i, c:'Food', s:'Groceries'},
-  {p:/mcdonalds|mcdonald|nando|sushi|pizza|restaurante|café|tasca|bistro|pastelaria/i, c:'Food', s:'Dining Out'},
-  {p:/glovo|uber eats|deliveroo/i, c:'Food', s:'Food Delivery'},
-  {p:/ballenoil|galp|repsol|bp\b|shell/i, c:'Transport', s:'Fuel'},
-  {p:/brisa|bip drive|via verde|portagem/i, c:'Transport', s:'Tolls'},
-  {p:/telpark|parking|interparking/i, c:'Transport', s:'Parking'},
-  {p:/uber(?! eats)|bolt\b|taxi|cabify/i, c:'Transport', s:'Uber/Taxi'},
-  {p:/metro|comboio|autocarro|cp\b|carris/i, c:'Transport', s:'Public Transport'},
-  {p:/farmacia|farmácia|boots|wells\b/i, c:'Health', s:'Pharmacy'},
-  {p:/clinica|hospital|doctor|dentist|médico/i, c:'Health', s:'Doctor'},
-  {p:/gym|fitness|holmes|ginásio/i, c:'Health', s:'Gym/Wellness'},
-  {p:/zara|h&m|primark|mango|gocco|vinted|pull&bear/i, c:'Shopping', s:'Clothing'},
-  {p:/amazon|fnac|worten|apple store/i, c:'Shopping', s:'Electronics'},
-  {p:/netflix|spotify|hbo|disney|apple.*sub|google play/i, c:'Leisure', s:'Subscriptions'},
-  {p:/air europa|iberia|ryanair|easyjet|tap\b|airbnb|hotel|booking/i, c:'Leisure', s:'Travel'},
-  {p:/trading 212|degiro|etf|vanguard/i, c:'Finance', s:'Investments'},
-  {p:/transfer to.*joint|transfer to.*cm|contribu/i, c:'Finance', s:'Joint Contribution'},
+  // Food
+  {p:/mercadona|auchan|lidl|aldi|spar|carrefour|dia|eroski|consum|alcampo|continente|pingo doce|intermarché|intermarche|remolonas|levaduramadre|sanchez romero/i, c:'Food', s:'Groceries'},
+  {p:/getir|gorillas|too good to go|la despensa/i, c:'Food', s:'Groceries'},
+  {p:/restaurante|restaurant|bistro|tasca|taberna|cerveceria|mcdonalds|kfc|burger king|nando|five guys|sushi|ramen|pizza|kebab|cafeteria|café|cafe|starbucks|brunch|pasteleria|panaderia/i, c:'Food', s:'Dining Out'},
+  {p:/glovo|uber.?eats|deliveroo|just.?eat/i, c:'Food', s:'Food Delivery'},
+  // Transport
+  {p:/ballenoil|galp|repsol|bp|shell|cepsa|total|gasolinera|gasolina/i, c:'Transport', s:'Fuel'},
+  {p:/brisa|bip.?drive|via verde|portagem|peaje|telepass/i, c:'Transport', s:'Tolls'},
+  {p:/telpark|empark|parking|interparking|parkia|saba|aparcamiento/i, c:'Transport', s:'Parking'},
+  {p:/uber(?!.*eats)|bolt|cabify|taxi|free now|mytaxi/i, c:'Transport', s:'Uber/Taxi'},
+  {p:/midas|norauto|kwik.?fit|aurgi|taller|mecanico|itv|autolavado/i, c:'Transport', s:'Car Service'},
+  {p:/metro|renfe|cercanias|autocarro|autobus|emt|tmb/i, c:'Transport', s:'Other Transport'},
+  // Health
+  {p:/farmacia|farmácia|parafarmacia|boots|wells|cruz verde/i, c:'Health', s:'Pharmacy'},
+  {p:/clinica|hospital|doctor|dr|médico|dentist|fisio|psicol|nutricion|cardiol|dermato/i, c:'Health', s:'Doctor'},
+  {p:/sanitas|adeslas|mapfre.*salud|dkv/i, c:'Health', s:'Doctor'},
+  // Sports
+  {p:/holmes|metropolitan|virgin.*active|fitness|gym|ginásio|padel|pádel|tenis|golf/i, c:'Sports', s:'Gym'},
+  {p:/decathlon|sport.*zone|intersport|nike|adidas|under armour/i, c:'Sports', s:'Equipment'},
+  // Shopping
+  {p:/zara|h&m|mango|pull.?bear|bershka|massimo dutti|primark|uniqlo|asos|zalando|el corte ingles/i, c:'Shopping', s:'Clothing'},
+  {p:/peluqueria|barberia|estetica|nails|spa|masaje/i, c:'Shopping', s:'Personal Care'},
+  // Leisure
+  {p:/netflix|hbo|disney|amazon prime|apple tv|filmin/i, c:'Leisure', s:'Subscriptions'},
+  {p:/spotify|apple music|tidal|deezer/i, c:'Leisure', s:'Subscriptions'},
+  {p:/chatgpt|openai|icloud|dropbox|adobe|microsoft 365|google.*one/i, c:'Leisure', s:'Subscriptions'},
+  {p:/iberia|ryanair|easyjet|tap|vueling|airbnb|booking\.com|hotel/i, c:'Leisure', s:'Travel'},
+  {p:/cine|cinema|teatro|concert|ticketmaster|eventbrite/i, c:'Leisure', s:'Events'},
+  // Finance
+  {p:/trading 212|degiro|etf|vanguard|myinvestor|indexa|finizens/i, c:'Finance', s:'Investments'},
+  {p:/transfer to.*joint|transfer to.*cm|contribucion|aportacion/i, c:'Finance', s:'Joint Contribution'},
 ];
+
+// ── MERCHANT NORMALISER ──
+// Strips noise: branch numbers, city names, card refs, dates
+function normaliseMerchant(desc) {
+  return (desc||'')
+    .toLowerCase()
+    .replace(/\d{4,}/g, '')          // strip long numbers (branch IDs)
+    .replace(/(madrid|lisboa|barcelona|pozuelo|porto|spain|portugal|es|pt)/gi, '')
+    .replace(/(s\.?l\.?|s\.?a\.?|ltd|gmbh|inc)/gi, '')
+    .replace(/\d{2}\/\d{2}\/\d{4}/g, '') // strip dates
+    .replace(/[*#_\-\.]{2,}/g, ' ')       // strip repeated punctuation
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function autoClassify(desc, amount) {
   const cfg = getDBCfg();
   const cats = cfg.cats;
   const isIncome = amount > 0;
   const d = desc || '';
+  const normDesc = normaliseMerchant(d);
 
+  // ── LAYER 1: History lookup with merchant normalisation ──
+  if (S.transactions && S.transactions.length > 0) {
+    // Exact normalised match first
+    const exactMatches = S.transactions.filter(t => {
+      const tn = normaliseMerchant(t.description||'');
+      return tn === normDesc && tn.length > 2;
+    });
+
+    // Partial match if no exact (first 15 chars of normalised)
+    const partialKey = normDesc.substring(0, 15).trim();
+    const partialMatches = exactMatches.length > 0 ? exactMatches :
+      (partialKey.length > 4 ? S.transactions.filter(t => {
+        const tn = normaliseMerchant(t.description||'');
+        return tn.startsWith(partialKey) && tn.length > 2;
+      }) : []);
+
+    const allMatches = partialMatches.length > 0 ? partialMatches : exactMatches;
+
+    if (allMatches.length > 0) {
+      // Frequency-weighted: most common category+subcategory wins
+      const freq = {};
+      allMatches.forEach(t => {
+        const k = `${t.type}|${t.category}|${t.subcategory||''}`;
+        freq[k] = (freq[k]||0) + 1;
+      });
+      const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+      const best = sorted[0][0].split('|');
+      const confidence = Math.round(sorted[0][1] / allMatches.length * 100);
+      return { type: best[0], cat: best[1], sub: best[2]||'', confidence, source:'history' };
+    }
+  }
+
+  // ── LAYER 2: Keyword rules ──
   if (DB === 'cm') {
     if (isIncome) {
-      for (const r of CM_INC) if (r.p.test(d)) return {type:'income', cat:'Income', sub:r.sub};
-      if (/payment from|transfer from/i.test(d)) return {type:'income', cat:'Income', sub:'Salary'};
-      return {type:'income', cat:'Income', sub:'Extra'};
+      for (const r of CM_INC) if (r.p.test(d)) return {type:'income', cat:'Income', sub:r.sub, confidence:80, source:'rule'};
+      if (/salary|salário|ordenado|nomina|nómina/i.test(d)) return {type:'income', cat:'Income', sub:'Salary', confidence:80, source:'rule'};
+      return {type:'income', cat:'Income', sub:'Extra', confidence:50, source:'rule'};
     } else {
-      for (const r of CM_EXP) if (r.p.test(d)) return {type:'expense', cat:r.c, sub:r.s};
+      for (const r of CM_EXP) if (r.p.test(d)) return {type:'expense', cat:r.c, sub:r.s, confidence:80, source:'rule'};
     }
   } else {
     if (isIncome) {
-      for (const r of PERSONAL_INC) if (r.p.test(d)) return {type:'income', cat:'Income', sub:r.sub};
-      return {type:'income', cat:'Income', sub:'Salary'};
+      for (const r of PERSONAL_INC) if (r.p.test(d)) return {type:'income', cat:'Income', sub:r.sub, confidence:80, source:'rule'};
+      return {type:'income', cat:'Income', sub:'Salary', confidence:50, source:'rule'};
     } else {
-      for (const r of PERSONAL_EXP) if (r.p.test(d)) return {type:'expense', cat:r.c, sub:r.s};
+      for (const r of PERSONAL_EXP) if (r.p.test(d)) return {type:'expense', cat:r.c, sub:r.s, confidence:80, source:'rule'};
     }
   }
-  // fallback
+
+  // ── LAYER 3: Fallback ──
   const firstExpCat = Object.keys(cats).find(k=>k!=='Income') || 'Personal';
-  return {type:'expense', cat:firstExpCat, sub:cats[firstExpCat]?.[0]||'Other'};
+  return {type:'expense', cat:firstExpCat, sub:cats[firstExpCat]?.[0]||'Other', confidence:0, source:'fallback'};
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1110,7 +1302,7 @@ function chYear(d){
   document.getElementById('topbar-year').textContent = viewYear;
   pnlYear = viewYear;
   document.getElementById('pnl-yr-d').textContent = viewYear;
-  renderOv(); renderPnL();
+  renderOv(); renderPnL(); renderHealthStrip();
   if(document.getElementById('page-explore')?.classList.contains('on')) renderExplore();
   filterTxn();
 }
@@ -1149,7 +1341,8 @@ async function switchDB(key, el) {
   applyDBVisibility();
   // Reset nav state
   viewMonth=null; pnlMonth=new Date().getMonth()+1; pnlView='annual'; pnlYear=new Date().getFullYear(); accMonth=null;
-  document.getElementById('mon-d').textContent='All Months';
+  const ovLbl=document.getElementById('dd-ov-mon-lbl'); if(ovLbl) ovLbl.textContent='All Months';
+  document.querySelectorAll('#dd-ov-mon-menu input').forEach(i=>i.checked=false);
   document.getElementById('pnl-mon-d').textContent=MONTHS[new Date().getMonth()];
   document.getElementById('acc-mon-d').textContent='All Time';
   document.querySelectorAll('.pnl-tab').forEach((t,i)=>t.classList.toggle('on',i===0));
@@ -1829,6 +2022,7 @@ function renderPnL() {
       <th style="${thS};background:var(--accent)08">Budget</th>
       ${MTHS.map(m=>`<th style="${thS}">${m}</th>`).join('')}
       <th style="${thS};border-left:2px solid var(--border2)">Total</th>
+      <th style="${thS}">Avg/mo</th>
     </tr></thead><tbody>
     <tr class="tot-row" style="border:none">
       <td style="padding:9px 10px;font-size:13px;font-weight:700;color:var(--green);border-bottom:1px solid var(--border);text-align:left">Income</td>
@@ -1853,8 +2047,10 @@ function renderPnL() {
 
   // Budget view removed — budget now managed in Explore section
 
-  // ── ANNUAL VIEW: Budget | Jan | Feb | ... | Dec | Total ──
+  // ── ANNUAL VIEW: Budget | Jan | Feb | ... | Dec | Total | Avg ──
   const yrNav2 = document.getElementById('pnl-yr-nav'); if(yrNav2) yrNav2.style.display='flex';
+  // Count months with any data for avg calculation
+  const activeMos = [1,2,3,4,5,6,7,8,9,10,11,12].filter(m=>ytdTxns.some(t=>new Date(t.date).getMonth()+1===m)).length||1;
 
   // Pre-compute monthly actuals for each cat/sub
   const monthly = {}; // monthly[cat][sub][month] = value
@@ -1889,6 +2085,16 @@ function renderPnL() {
   function totCell(val, isInc) {
     return `<td class="mono" style="color:${val===0?'var(--t3)':isInc?'var(--green)':'var(--red)'};font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${val?fmt(val):'—'}</td>`;
   }
+  function avgCell(val, isInc, budVal) {
+    const avg = val/activeMos;
+    let vsBud = '';
+    if (budVal && budVal > 0 && avg > 0) {
+      const diff = Math.round((avg-budVal)/budVal*100);
+      const col = isInc ? (diff>=0?'var(--green)':'var(--red)') : (diff<=0?'var(--green)':'var(--red)');
+      vsBud = `<div style="font-size:9px;color:${col};font-weight:700">${diff>=0?'+':''}${diff}% vs bud</div>`;
+    }
+    return `<td style="text-align:right;padding:6px 8px;min-width:80px"><div style="font-family:'Nunito Sans',sans-serif;font-size:12px;color:${avg===0?'var(--t3)':isInc?'var(--green)':'var(--red)'}">${avg?fmt(avg):'—'}</div>${vsBud}</td>`;
+  }
 
   // INCOME section
   const incBudObj = bud['Income'] || {};
@@ -1900,6 +2106,7 @@ function renderPnL() {
       return mCell(v,true);
     }).join('')}
     ${totCell(ytdInc,true)}
+    ${avgCell(ytdInc,true)}
   </tr>`;
 
   (cats['Income']||[]).forEach(sub => {
@@ -1939,6 +2146,7 @@ function renderPnL() {
       ${budCell(catBudTotal)}
       ${catMonthly.map(v=>mCell(v,false)).join('')}
       ${totCell(catTotal,false)}
+      ${avgCell(catTotal,false,catBudTotal)}
     </tr>`;
 
     (cats[cat]||[]).forEach(sub => {
@@ -1949,6 +2157,7 @@ function renderPnL() {
         ${budCell(budV)}
         ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>mCell(monthly[cat]?.[sub]?.[m]||0,false)).join('')}
         ${totCell(total,false)}
+        ${avgCell(total,false,budObj[sub]||0)}
       </tr>`;
     });
   });
@@ -1968,6 +2177,7 @@ function renderPnL() {
     ${budCell(getBudTotalExp())}
     ${expMonthly.map(v=>`<td class="mono lg" style="color:var(--red);text-align:right;padding:6px 10px">${v?fmt(v):'—'}</td>`).join('')}
     <td class="mono lg" style="color:var(--red);font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${fmt(ytdExp)}</td>
+    ${avgCell(ytdExp,false)}
   </tr>`;
 
   html += `<tr class="tot-row" style="border-top:2px solid var(--border2)">
@@ -1975,6 +2185,7 @@ function renderPnL() {
     ${budCell(getBudTotalInc()-getBudTotalExp())}
     ${netMonthly.map(v=>`<td class="mono lg" style="color:${v>=0?'var(--green)':'var(--red)'};text-align:right;padding:6px 10px">${v?fmt(v):'—'}</td>`).join('')}
     <td class="mono lg" style="color:${ytdNet>=0?'var(--green)':'var(--red)'};font-weight:700;text-align:right;padding:6px 10px;border-left:1px solid var(--border2)">${fmt(ytdNet)}</td>
+    ${avgCell(ytdNet,ytdNet>=0)}
   </tr>`;
 
   html += '</tbody></table>';
@@ -2108,7 +2319,8 @@ function filterTxn() {
 function clearF(){
   document.getElementById('s-q').value='';
   document.getElementById('s-cat').value='';
-  document.getElementById('s-mon').value='';
+  document.querySelectorAll('#dd-txn-mon-menu input').forEach(i=>i.checked=false);
+  const ml=document.getElementById('dd-txn-mon-lbl'); if(ml) ml.textContent='All Months';
   document.getElementById('s-yr').value='';
   document.getElementById('s-type').value='';
   filterTxn();
@@ -2537,11 +2749,11 @@ function renderExplore() {
 async function applyDBVisibility() {
   const cfg = getDBCfg();
   const showExtra = cfg.hasAccounts && cfg.hasGoals;
-  document.getElementById('nav-accounts').style.display = showExtra ? 'flex' : 'none';
-  document.getElementById('nav-goals').style.display = showExtra ? 'flex' : 'none';
-  // If currently on a hidden page, redirect to overview
+  document.getElementById('nav-planning').style.display = showExtra ? 'flex' : 'none';
+  const mobPlan = document.getElementById('mob-planning-btn');
+  if(mobPlan) mobPlan.style.display = showExtra ? 'flex' : 'none';
   const activePage = document.querySelector('.page.on')?.id?.replace('page-','');
-  if (!showExtra && (activePage==='accounts'||activePage==='goals')) {
+  if (!showExtra && activePage==='planning') {
     nav('overview', document.querySelector('.ni'));
   }
 }
@@ -2552,6 +2764,7 @@ async function init() {
   buildExploreFilters();
   await loadS();
   renderOv();
+  renderHealthStrip();
   applyDBVisibility();
   updateFlagBadge();
 }
@@ -2597,6 +2810,91 @@ async function keepAlive() {
 // Ping on load and every 4 days (in ms)
 keepAlive();
 setInterval(keepAlive, 4 * 24 * 60 * 60 * 1000);
+
+
+// ══════════════════════════════════════════════════════════
+// FINANCE HEALTH STRIP
+// ══════════════════════════════════════════════════════════
+function renderHealthStrip() {
+  const now = new Date();
+  const isJoint = DB === 'cm';
+  const fixedCats = isJoint ? ['House','Health','Baby'] : ['Health','Finance'];
+
+  // ── 1. Savings Rate Trend — last 6 months ──
+  const sparkRates = [];
+  for (let i=5; i>=0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const yr = d.getFullYear(), mo = d.getMonth()+1;
+    const mT = S.transactions.filter(t=>!t.ignored&&new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()+1===mo);
+    const mI = mT.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const mE = mT.filter(t=>t.type==='expense').reduce((s,t)=>s+Math.abs(t.amount),0);
+    sparkRates.push(mI>0 ? (mI-mE)/mI*100 : null);
+  }
+  const validRates = sparkRates.filter(r=>r!==null);
+  const sparkEl = document.getElementById('health-sparkline');
+  const arrowEl = document.getElementById('health-trend-arrow');
+  const trendLbl = document.getElementById('health-trend-label');
+  if (sparkEl && validRates.length >= 2) {
+    const maxR = Math.max(...validRates.map(Math.abs), 1);
+    sparkEl.innerHTML = sparkRates.map((r,i)=>{
+      if(r===null) return `<div style="width:8px;height:4px;background:var(--s2);border-radius:2px;align-self:center"></div>`;
+      const h = Math.max(Math.abs(r)/maxR*24,2);
+      const col = r>=20?'#30a46c':r>=0?'#f59e0b':'#e5484d';
+      return `<div style="width:8px;height:${h}px;background:${col};border-radius:2px" title="${Math.round(r)}%"></div>`;
+    }).join('');
+    const last = validRates[validRates.length-1];
+    const prev = validRates[validRates.length-2];
+    const delta = last - prev;
+    arrowEl.textContent = delta > 1 ? '↑' : delta < -1 ? '↓' : '→';
+    arrowEl.style.color = delta > 1 ? 'var(--green)' : delta < -1 ? 'var(--red)' : 'var(--t3)';
+    trendLbl.textContent = `${Math.round(last)}% this month`;
+    trendLbl.style.color = last >= 20 ? 'var(--green)' : last >= 0 ? 'var(--amber)' : 'var(--red)';
+  } else if(sparkEl) {
+    sparkEl.innerHTML = '<div style="font-size:12px;color:var(--t3)">Not enough data</div>';
+    if(arrowEl) arrowEl.textContent='';
+    if(trendLbl) trendLbl.textContent='Import more months';
+  }
+
+  // ── 2. Fixed vs Discretionary (YTD) ──
+  const ytd = S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===viewYear);
+  const totalExp = ytd.reduce((s,t)=>s+Math.abs(t.amount),0);
+  const fixedExp = ytd.filter(t=>fixedCats.includes(t.category)).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const fixedPct = totalExp>0 ? Math.round(fixedExp/totalExp*100) : 0;
+  const varPct = 100-fixedPct;
+  const fvBar = document.getElementById('health-fv-bar');
+  const fvLbl = document.getElementById('health-fv-label');
+  if(fvBar) fvBar.style.width = fixedPct+'%';
+  if(fvLbl) fvLbl.textContent = `${fixedPct}% fixed · ${varPct}% discretionary`;
+
+  // ── 3. Budget Adherence (current month) ──
+  const curMo = now.getMonth()+1;
+  const curYr = now.getFullYear();
+  const curTxns = S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===curYr&&new Date(t.date).getMonth()+1===curMo);
+  const bud = getBudget();
+  const cats = getCats();
+  const expCats = Object.keys(cats).filter(c=>c!=='Income');
+  let onTrack=0, total=0;
+  expCats.forEach(cat=>{
+    const budTotal = Object.values(bud[cat]||{}).reduce((s,v)=>s+v,0);
+    if(budTotal===0) return;
+    const actual = curTxns.filter(t=>t.category===cat).reduce((s,t)=>s+Math.abs(t.amount),0);
+    total++;
+    if(actual<=budTotal) onTrack++;
+  });
+  const adherenceEl = document.getElementById('health-adherence');
+  const adherenceLbl = document.getElementById('health-adherence-label');
+  if(adherenceEl) {
+    if(total===0){
+      adherenceEl.textContent='—';
+      if(adherenceLbl) adherenceLbl.textContent='Set a budget to track';
+    } else {
+      const pct = Math.round(onTrack/total*100);
+      adherenceEl.textContent = pct+'%';
+      adherenceEl.style.color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+      if(adherenceLbl) adherenceLbl.textContent = `${onTrack}/${total} categories within budget`;
+    }
+  }
+}
 
 // ── MOBILE NAV ──
 function mobNav(el) {
