@@ -467,7 +467,7 @@ const ac=document.getElementById('area-chart');if(!ac)return;
 const now=new Date(),yr=viewYear;
 const months=[];
 for(let m=1;m<=12;m++){if(yr===now.getFullYear()&&new Date(yr,m-1,1)>now)break;months.push(m);}
-const fmtK=v=>Math.abs(v)>=1000?Math.round(Math.abs(v)/1000)+'k':Math.round(Math.abs(v)).toString();
+const fmtK=v=>{const abs=Math.abs(v);if(abs>=1000){const k=abs/1000;return(Math.round(k*10)/10).toString();}return Math.round(abs).toString();};
 if(DB==='cm'){
 const{_cmTxns,_martimTxns,_carlotaTxns}=consolidatedNets;
 if(!_cmTxns&&!_martimTxns&&!_carlotaTxns){ac.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📊</div>Loading data...</div>';return;}
@@ -577,6 +577,25 @@ function getAccountColor(name){const n=(name||'').toLowerCase();if(n.includes('i
 function getLatestBalances(){const latest={};S.accounts.forEach(a=>{if(!latest[a.name]||new Date(a.date)>new Date(latest[a.name].date))latest[a.name]=a;});return latest;}
 function getSavingsTotal(latest){return Object.entries(latest).filter(([k])=>getAccountGroup(k)!=='invest').reduce((s,[,a])=>s+parseFloat(a.balance||0),0);}
 function getInvestTotal(latest){return Object.entries(latest).filter(([k])=>getAccountGroup(k)==='invest').reduce((s,[,a])=>s+parseFloat(a.balance||0),0);}
+function renderAccounts(){
+  const el=document.getElementById('acc-list');if(!el)return;
+  const latest=getLatestBalances();
+  const entries=Object.values(latest);
+  if(!entries.length){el.innerHTML='<div class="empty"><div class="ei">🏦</div>No data yet.</div>';return;}
+  entries.sort((a,b)=>parseFloat(b.balance||0)-parseFloat(a.balance||0));
+  const total=entries.reduce((s,a)=>s+parseFloat(a.balance||0),0);
+  const rows=entries.map(a=>{const bal=parseFloat(a.balance||0);const pct=total>0?Math.round(bal/total*100):0;const col=getAccountColor(a.name);return`<tr><td style="font-size:12px;font-weight:600;color:${col};padding:7px 4px;border-bottom:0.5px solid var(--border)">${a.name}</td><td style="text-align:right;font-family:'Nunito Sans',sans-serif;font-size:13px;padding:7px 4px;border-bottom:0.5px solid var(--border)">${fmt(bal)}</td><td style="text-align:right;font-size:11px;color:var(--t3);padding:7px 4px;border-bottom:0.5px solid var(--border)">${pct}%</td></tr>`;}).join('');
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="font-size:10px;font-weight:600;color:var(--t3);text-align:left;padding-bottom:6px;letter-spacing:.06em;text-transform:uppercase">Account</th><th style="font-size:10px;font-weight:600;color:var(--t3);text-align:right;padding-bottom:6px;letter-spacing:.06em;text-transform:uppercase">Balance</th><th style="font-size:10px;font-weight:600;color:var(--t3);text-align:right;padding-bottom:6px;letter-spacing:.06em;text-transform:uppercase">% Total</th></tr></thead><tbody>${rows}<tr><td style="font-weight:700;font-size:13px;padding:9px 4px;border-top:1.5px solid var(--border2)">Total</td><td style="text-align:right;font-family:'Nunito Sans',sans-serif;font-size:14px;font-weight:800;padding:9px 4px;border-top:1.5px solid var(--border2)">${fmt(total)}</td><td style="text-align:right;font-weight:700;padding:9px 4px;border-top:1.5px solid var(--border2)">100%</td></tr></tbody></table>`;
+  checkSnapshotStaleness();
+}
+function checkSnapshotStaleness(){
+  const el=document.getElementById('stale-banner');if(!el)return;
+  if(!S.accounts.length){el.style.display='none';return;}
+  const latest=S.accounts.reduce((a,b)=>new Date(a.date)>new Date(b.date)?a:b);
+  const days=Math.floor((new Date()-new Date(latest.date))/(1000*60*60*24));
+  if(days>=30){el.style.display='block';el.innerHTML=`<div style="padding:10px 16px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;font-size:12px;color:#92400e">⚠ Last balance update was <strong>${days} days ago</strong> — log new balances to keep evolution accurate.</div>`;}
+  else el.style.display='none';
+}
 function renderPlanningKPIs(){
   const el=document.getElementById('plan-kpis');if(!el)return;
   const latest=getLatestBalances();
