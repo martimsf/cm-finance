@@ -327,31 +327,34 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
   <div id="stale-banner" style="display:none;margin-bottom:12px"></div>
   <div class="g4" style="margin-bottom:14px" id="plan-kpis"></div>
-  <div class="g2" style="margin-bottom:14px">
-    <div class="card" style="padding:18px 20px">
-      <div class="ct">Account Evolution <span style="font-size:10px;color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">(thousands)</span></div>
-      <div id="acc-evolution-chart"><div class="empty" style="padding:24px 0"><div class="ei">&#128202;</div>Log account balances to see evolution.</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;align-items:stretch">
+    <div class="card" style="padding:18px 20px;display:flex;flex-direction:column">
+      <div class="ct">Account Evolution</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:10px">(thousands)</div>
+      <div style="flex:1" id="acc-evolution-chart"><div class="empty" style="padding:24px 0"><div class="ei">&#128202;</div>Log account balances to see evolution.</div></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card" style="padding:18px 20px">
-        <div class="ct">Current Balances</div>
-        <div id="acc-list"><div class="empty"><div class="ei">&#127970;</div>No data yet.</div></div>
-      </div>
-      <div class="card" style="padding:18px 20px">
-        <div class="ct">Net Worth Trend</div>
-        <div id="acc-chart"></div>
-      </div>
-      <div class="card" style="padding:18px 20px">
-        <div class="ct">Savings Rate <span style="font-size:10px;color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">% per month</span></div>
-        <div id="savings-rate-chart"></div>
-      </div>
+    <div class="card" style="padding:18px 20px">
+      <div class="ct">Current Balances</div>
+      <div id="acc-list" style="margin-top:8px"><div class="empty"><div class="ei">&#127970;</div>No data yet.</div></div>
     </div>
   </div>
-  <div class="card" style="padding:18px 20px;margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <div class="card" style="padding:18px 20px">
+      <div class="ct">Net Worth Trend</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px">(thousands)</div>
+      <div id="acc-chart"></div>
+    </div>
+    <div class="card" style="padding:18px 20px">
+      <div class="ct">Savings Rate</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px">% per month</div>
+      <div id="savings-rate-chart"></div>
+    </div>
+  </div>
+  <div class="card" style="padding:16px 20px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div class="ct" style="margin-bottom:0">AI Analysis</div>
     </div>
-    <div id="ai-analysis"><div style="font-size:13px;color:var(--t3)">Open Planning to generate analysis.</div></div>
+    <div id="ai-analysis"><div style="font-size:12px;color:var(--t3)">Open Planning to generate analysis.</div></div>
   </div>
   <div class="ct" style="margin-bottom:10px">Goals</div>
   <div id="goals-w"><div class="empty"><div class="ei">&#127919;</div>No goals yet.</div></div>
@@ -384,8 +387,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 <div class="modal-bg" id="m-goal">
   <div class="modal"><h3>Add Goal</h3>
     <div class="mg"><div class="fl">Name</div><input class="fi" style="width:100%" id="g-name" placeholder="e.g. Emergency Fund"></div>
+    <div class="mg"><div class="fl">Type</div><select class="fs" style="width:100%" id="g-type"><option value="savings">Savings / Personal</option><option value="investments">Investments</option></select></div>
+    <div class="mg"><div class="fl">Priority (1 = highest)</div><input class="fi" type="number" style="width:100%" id="g-priority" placeholder="1" min="1" value="1"></div>
     <div class="mg"><div class="fl">Target Amount</div><input class="fi" type="number" style="width:100%" id="g-target" placeholder="10000"></div>
-    <div class="mg"><div class="fl">Current Amount</div><input class="fi" type="number" style="width:100%" id="g-current" placeholder="0"></div>
     <div class="mg"><div class="fl">Target Date</div><input class="fi" type="date" style="width:100%" id="g-date"></div>
     <div style="display:flex;gap:8px;margin-top:18px"><button class="btn btn-p" onclick="saveGoal()">Save Goal</button><button class="btn btn-g" onclick="closeM('goal')">Cancel</button></div>
   </div>
@@ -568,57 +572,9 @@ function clearExplore(){['yr','mon','cat','sub','type'].forEach(k=>{document.que
 function toggleDD(id){const wrap=document.getElementById(id);const menu=wrap?.querySelector('.dd-menu');const btn=wrap?.querySelector('.dd-btn');const isOpen=menu?.classList.contains('open');closeAllDD();if(!isOpen&&menu){menu.classList.add('open');btn?.classList.add('active');}}
 function closeAllDD(){document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('open'));document.querySelectorAll('.dd-btn').forEach(b=>b.classList.remove('active'));}
 document.addEventListener('click',e=>{if(!e.target.closest('.dd-wrap'))closeAllDD();});
-function renderGoals(){
-  const el=document.getElementById('goals-w');if(!el)return;
-  if(!S.goals.length){el.innerHTML='<div class="empty"><div class="ei">🎯</div>No goals yet.</div>';return;}
-  // Get avg monthly savings
-  const ytdInc=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+t.amount,0);
-  const ytdExp=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+Math.abs(t.amount),0);
-  const activeMos=Math.max(new Set(S.transactions.filter(t=>!t.ignored&&new Date(t.date).getFullYear()===viewYear).map(t=>new Date(t.date).getMonth()+1)).size,1);
-  const avgMoSav=(ytdInc-ytdExp)/activeMos;
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">'+S.goals.map(g=>{
-    const pct=g.target>0?Math.min(Math.round((g.current||0)/g.target*100),100):0;
-    const remaining=(g.target||0)-(g.current||0);
-    let projection='';
-    if(avgMoSav>0&&remaining>0){
-      const moNeeded=Math.ceil(remaining/avgMoSav);
-      const projDate=new Date();projDate.setMonth(projDate.getMonth()+moNeeded);
-      const projStr=projDate.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
-      const onTime=g.target_date&&new Date(projDate)<=new Date(g.target_date);
-      projection=`<div style="font-size:11px;color:${onTime?'var(--green)':'var(--amber)'};margin-top:4px;font-weight:600">→ ${projStr} at current rate${g.target_date&&!onTime?' (late)':''}</div>`;
-    }else if(remaining<=0){
-      projection=`<div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:600">✓ Goal reached</div>`;
-    }
-    return`<div class="card" style="padding:16px;border-top:3px solid var(--accent)"><div style="font-weight:700;font-size:14px;margin-bottom:6px">${g.name||'Goal'}</div><div style="font-family:'Nunito Sans',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px;color:var(--accent)">${pct}%</div><div style="height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin-bottom:8px"><div style="height:100%;background:var(--accent);border-radius:4px;width:${pct}%;transition:width .4s"></div></div><div style="font-size:13px;color:var(--t2)">${fmt(g.current||0)} of ${fmt(g.target||0)}</div>${g.target_date?`<div style="font-size:11px;color:var(--t3);margin-top:3px">Target date: ${new Date(g.target_date).toLocaleDateString('en-GB')}</div>`:''} ${projection}<button class="btn btn-g btn-sm" style="margin-top:10px" onclick="delGoal(${g.id})">Delete</button></div>`;
-  }).join('')+'</div>';
-}
-async function saveGoal(){const name=document.getElementById('g-name')?.value?.trim();if(!name){toast('⚠ Enter a goal name');return;}const goal={id:Date.now(),name,target:parseFloat(document.getElementById('g-target')?.value)||0,current:parseFloat(document.getElementById('g-current')?.value)||0,target_date:document.getElementById('g-date')?.value||null};try{await sbFetch('POST',getTbl().goals,goal,'?on_conflict=id');S.goals.push(goal);renderGoals();closeM('goal');toast('✓ Goal saved');}catch(e){toast('⚠ '+e.message);}}
-async function delGoal(id){if(!confirm('Delete this goal?'))return;try{await sbFetch('DELETE',getTbl().goals,null,`?id=eq.${id}`);S.goals=S.goals.filter(g=>g.id!==id);renderGoals();toast('✓ Deleted');}catch(e){toast('⚠ '+e.message);}}
-function renderAccounts(){
-  const el=document.getElementById('acc-list');if(!el)return;
-  const cfg=getDBCfg();
-  const latest={};
-  S.accounts.forEach(a=>{if(!latest[a.name]||new Date(a.date)>new Date(latest[a.name].date))latest[a.name]=a;});
-  const entries=Object.values(latest);
-  if(!entries.length){el.innerHTML='<div class="empty"><div class="ei">🏦</div>No data yet.</div>';return;}
-  const total=entries.reduce((s,a)=>s+parseFloat(a.balance||0),0);
-  el.innerHTML=entries.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:600">${a.name}</div><div style="font-family:'Nunito Sans',sans-serif;font-size:16px;font-weight:700;color:${parseFloat(a.balance)>=0?'var(--text)':'var(--red)'}">${fmt(parseFloat(a.balance||0))}</div></div>`).join('')+`<div style="display:flex;justify-content:space-between;padding:12px 0;font-weight:800;font-size:15px;border-top:2px solid var(--border2)"><div>Total</div><div style="font-family:'Nunito Sans',sans-serif">${fmt(total)}</div></div>`;
-  const sel=document.getElementById('acc-name-sel');if(sel&&sel.tagName==='SELECT')sel.innerHTML=cfg.accounts.map(a=>`<option>${a}</option>`).join('');
-  checkSnapshotStaleness();
-}
-
-function checkSnapshotStaleness(){
-  const el=document.getElementById('stale-banner');if(!el)return;
-  if(!S.accounts.length){el.style.display='none';return;}
-  const latest=S.accounts.reduce((a,b)=>new Date(a.date)>new Date(b.date)?a:b);
-  const days=Math.floor((new Date()-new Date(latest.date))/(1000*60*60*24));
-  if(days>=30){el.style.display='block';el.innerHTML=`<div style="padding:10px 16px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px"><span>⚠</span> Last balance update was <strong>${days} days ago</strong> — log new balances to keep evolution accurate.</div>`;}
-  else el.style.display='none';
-}
-
 function renderPlanningKPIs(){
   const el=document.getElementById('plan-kpis');if(!el)return;
-  const latest={};S.accounts.forEach(a=>{if(!latest[a.name]||new Date(a.date)>new Date(latest[a.name].date))latest[a.name]=a;});
+  const latest=getLatestBalances();
   const netWorth=Object.values(latest).reduce((s,a)=>s+parseFloat(a.balance||0),0);
   const earliest={};S.accounts.forEach(a=>{if(!earliest[a.name]||new Date(a.date)<new Date(earliest[a.name].date))earliest[a.name]=a;});
   const earliestTotal=Object.values(earliest).reduce((s,a)=>s+parseFloat(a.balance||0),0);
@@ -633,79 +589,83 @@ function renderPlanningKPIs(){
   const savRate=ytdInc>0?Math.round((ytdInc-ytdExp)/ytdInc*100):null;
   const avgMoSav=activeMos>0?(ytdInc-ytdExp)/activeMos:0;
   el.innerHTML=`
-    <div class="sc" style="border-top:3px solid var(--accent)">
-      <div class="sl">Net Worth</div><div class="sv">${fmt(netWorth)}</div>
-      <span class="sb2" style="color:${nwDelta>=0?'var(--green)':'var(--red)'}">${nwDeltaPct!==null?(nwDelta>=0?'+':'')+nwDeltaPct+'% since first log':'First snapshot'}</span>
-    </div>
-    <div class="sc" style="border-top:3px solid ${runway&&runway>=6?'var(--green)':runway&&runway>=3?'var(--amber)':'var(--red)'}">
-      <div class="sl">Runway</div><div class="sv">${runway?runway+' mo':'--'}</div>
-      <span class="sb2">${avgMonthlySpend?fmt(avgMonthlySpend)+'/mo avg spend':'No spend data'}</span>
-    </div>
-    <div class="sc" style="border-top:3px solid ${savRate&&savRate>=20?'var(--green)':savRate&&savRate>=10?'var(--amber)':'var(--red)'}">
-      <div class="sl">Savings Rate</div><div class="sv">${savRate!==null?savRate+'%':'--'}</div>
-      <span class="sb2">${avgMoSav?fmt(avgMoSav)+'/mo avg':'No data'}</span>
-    </div>
-    <div class="sc" style="border-top:3px solid var(--t3)">
-      <div class="sl">Avg Monthly Savings</div><div class="sv">${fmt(avgMoSav)}</div>
-      <span class="sb2">${activeMos} months of data</span>
-    </div>`;
+    <div class="sc" style="border-top:3px solid var(--accent)"><div class="sl">Net Worth</div><div class="sv">${fmt(netWorth)}</div><span class="sb2" style="color:${nwDelta>=0?'var(--green)':'var(--red)'}">${nwDeltaPct!==null?(nwDelta>=0?'+':'')+nwDeltaPct+'% since first log':'First snapshot'}</span></div>
+    <div class="sc" style="border-top:3px solid ${runway&&runway>=6?'var(--green)':runway&&runway>=3?'var(--amber)':'var(--red)'}"><div class="sl">Runway</div><div class="sv">${runway?runway+' mo':'--'}</div><span class="sb2">${avgMonthlySpend?fmt(avgMonthlySpend)+'/mo avg spend':'No spend data'}</span></div>
+    <div class="sc" style="border-top:3px solid ${savRate&&savRate>=20?'var(--green)':savRate&&savRate>=10?'var(--amber)':'var(--red)'}"><div class="sl">Savings Rate</div><div class="sv">${savRate!==null?savRate+'%':'--'}</div><span class="sb2">${avgMoSav?fmt(avgMoSav)+'/mo avg':'No data'}</span></div>
+    <div class="sc" style="border-top:3px solid var(--t3)"><div class="sl">Avg Monthly Savings</div><div class="sv">${fmt(avgMoSav)}</div><span class="sb2">${activeMos} months of data</span></div>`;
 }
-
 function renderGoals(){
   const el=document.getElementById('goals-w');if(!el)return;
   if(!S.goals.length){el.innerHTML='<div class="empty"><div class="ei">🎯</div>No goals yet.</div>';return;}
-  const latest={};S.accounts.forEach(a=>{if(!latest[a.name]||new Date(a.date)>new Date(latest[a.name].date))latest[a.name]=a;});
-  // Net worth excluding investments
-  const netWorthLiquid=Object.entries(latest).filter(([k])=>!k.toLowerCase().includes('invest')).reduce((s,[,a])=>s+parseFloat(a.balance||0),0);
+  const latest=getLatestBalances();
+  const savingsTotal=getSavingsTotal(latest);
+  const investTotal=getInvestTotal(latest);
   const ytdInc=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+t.amount,0);
   const ytdExp=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+Math.abs(t.amount),0);
   const activeMos=Math.max(new Set(S.transactions.filter(t=>!t.ignored&&new Date(t.date).getFullYear()===viewYear).map(t=>new Date(t.date).getMonth()+1)).size,1);
   const avgMoSav=(ytdInc-ytdExp)/activeMos;
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">'+S.goals.map(g=>{
-    const current=netWorthLiquid;
+  // Sort by priority (order field) then id
+  const sorted=[...S.goals].sort((a,b)=>(a.priority||99)-(b.priority||99)||(a.id-b.id));
+  // Waterfall: track how much savings is consumed by prior goals
+  let savingsConsumed=0;
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">'+sorted.map(g=>{
+    const isInvest=(g.type||'savings')==='investments';
+    const pool=isInvest?investTotal:Math.max(savingsTotal-savingsConsumed,0);
+    const current=Math.min(pool,g.target||0);
     const pct=g.target>0?Math.min(Math.round(current/g.target*100),100):0;
+    const reached=current>=g.target;
+    if(!isInvest)savingsConsumed+=g.target||0;
     const remaining=(g.target||0)-current;
     let projection='';
-    if(avgMoSav>0&&remaining>0){
+    if(reached){
+      projection=`<div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:600">✓ Goal reached</div>`;
+    }else if(avgMoSav>0&&remaining>0&&!isInvest){
       const moNeeded=Math.ceil(remaining/avgMoSav);
       const projDate=new Date();projDate.setMonth(projDate.getMonth()+moNeeded);
       const projStr=projDate.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
       const onTime=g.target_date&&new Date(projDate)<=new Date(g.target_date);
-      projection=`<div style="font-size:11px;color:${onTime?'var(--green)':'var(--amber)'};margin-top:4px;font-weight:600">→ ${projStr} at current rate${g.target_date&&!onTime?' (behind)':''}</div>`;
-    }else if(remaining<=0){
-      projection=`<div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:600">✓ Goal reached</div>`;
+      projection=`<div style="font-size:11px;color:${onTime?'var(--green)':'var(--amber)'};margin-top:4px;font-weight:600">→ ${projStr}${g.target_date&&!onTime?' (behind)':''}</div>`;
     }
-    return`<div class="card" style="padding:16px;border-top:3px solid var(--accent)"><div style="font-weight:700;font-size:14px;margin-bottom:6px">${g.name||'Goal'}</div><div style="font-family:'Nunito Sans',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px;color:var(--accent)">${pct}%</div><div style="height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin-bottom:8px"><div style="height:100%;background:var(--accent);border-radius:4px;width:${pct}%;transition:width .4s"></div></div><div style="font-size:13px;color:var(--t2)">${fmt(current)} of ${fmt(g.target||0)}</div>${g.target_date?`<div style="font-size:11px;color:var(--t3);margin-top:3px">Target: ${new Date(g.target_date).toLocaleDateString('en-GB')}</div>`:''} ${projection}<button class="btn btn-g btn-sm" style="margin-top:10px" onclick="delGoal(${g.id})">Delete</button></div>`;
+    const typeLabel=isInvest?'Investments':'Savings';
+    return`<div class="card" style="padding:16px;border-top:3px solid var(--accent)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div style="font-weight:700;font-size:14px">${g.name||'Goal'}</div>
+        <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${isInvest?'#e8f8f0':'rgba(79,70,229,.08)'};color:${isInvest?'#1baf7a':'var(--accent)'};">${typeLabel}</span>
+      </div>
+      <div style="font-family:'Nunito Sans',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px;color:${reached?'var(--green)':'var(--accent)'}">${pct}%</div>
+      <div style="height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin-bottom:8px"><div style="height:100%;background:${reached?'var(--green)':'var(--accent)'};border-radius:4px;width:${pct}%;transition:width .4s"></div></div>
+      <div style="font-size:13px;color:var(--t2)">${fmt(current)} of ${fmt(g.target||0)}</div>
+      ${g.target_date?`<div style="font-size:11px;color:var(--t3);margin-top:3px">Target: ${new Date(g.target_date).toLocaleDateString('en-GB')}</div>`:''}
+      ${projection}
+      <button class="btn btn-g btn-sm" style="margin-top:10px" onclick="delGoal(${g.id})">Delete</button>
+    </div>`;
   }).join('')+'</div>';
 }
 
 function renderNetWorthChart(){
   const el=document.getElementById('acc-chart');if(!el)return;
-  if(!S.accounts.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📈</div>Log account balances to track evolution.</div>';return;}
-  const byDate={};
-  S.accounts.forEach(a=>{const d=a.date?.split('T')[0];if(!d)return;if(!byDate[d])byDate[d]={};byDate[d][a.name]=parseFloat(a.balance||0);});
-  const allNames=[...new Set(S.accounts.map(a=>a.name))];
-  const dates=Object.keys(byDate).sort();
-  if(dates.length<1){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📈</div>Log more snapshots to see evolution.</div>';return;}
-  const nwByDate=dates.map(d=>{
-    let total=0;
-    allNames.forEach(name=>{const snaps=S.accounts.filter(a=>a.name===name&&a.date?.split('T')[0]<=d).sort((a,b)=>new Date(b.date)-new Date(a.date));if(snaps.length)total+=parseFloat(snaps[0].balance||0);});
-    return{d,nw:total};
-  });
-  if(nwByDate.length<2){el.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-family:'Nunito Sans',sans-serif;font-size:32px;font-weight:800;color:var(--accent)">${fmt(nwByDate[0]?.nw||0)}</div><div style="font-size:12px;color:var(--t3);margin-top:6px">Net worth on ${nwByDate[0]?.d}</div><div style="font-size:12px;color:var(--t3);margin-top:4px">Log more snapshots to see trend</div></div>`;return;}
-  const CW=el.clientWidth||400,CH=180,PL=12,PR=12,PT=20,PB=28,IW=CW-PL-PR,IH=CH-PT-PB;
+  // Filter snapshots from 26 Sep 2026 onwards
+  const cutoff='2026-09-26';
+  const filtered=S.accounts.filter(a=>a.date?.split('T')[0]>=cutoff);
+  if(!filtered.length){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Log account balances to see trend.</div>';return;}
+  const allNames=[...new Set(filtered.map(a=>a.name))];
+  const dates=[...new Set(filtered.map(a=>a.date?.split('T')[0]))].filter(Boolean).sort();
+  if(dates.length<2){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Log more snapshots to see trend.</div>';return;}
+  const getB=(name,upTo)=>{const snaps=filtered.filter(a=>a.name===name&&a.date?.split('T')[0]<=upTo).sort((a,b)=>new Date(b.date)-new Date(a.date));return snaps.length?parseFloat(snaps[0].balance||0):0;};
+  const nwByDate=dates.map(d=>({d,nw:allNames.reduce((s,n)=>s+getB(n,d),0)}));
+  const CW=el.clientWidth||300,CH=100,PL=8,PR=8,PT=18,PB=24,IW=CW-PL-PR,IH=CH-PT-PB;
   const nws=nwByDate.map(x=>x.nw);
-  const minNW=Math.min(...nws),maxNW=Math.max(...nws);
-  const range=maxNW-minNW||1;
+  const minNW=Math.min(...nws),maxNW=Math.max(...nws),range=maxNW-minNW||1;
   const toX=i=>PL+i/(nwByDate.length-1)*IW;
   const toY=v=>PT+IH-(v-minNW)/range*IH;
   const pts=nwByDate.map((x,i)=>`${toX(i).toFixed(1)},${toY(x.nw).toFixed(1)}`).join(' ');
-  const firstPt=nwByDate[0],lastPt=nwByDate[nwByDate.length-1];
-  const delta=lastPt.nw-firstPt.nw,deltaCol=delta>=0?'#30a46c':'#e5484d';
-  const dots=nwByDate.map((x,i)=>`<circle cx="${toX(i).toFixed(1)}" cy="${toY(x.nw).toFixed(1)}" r="3.5" fill="${deltaCol}" stroke="white" stroke-width="1.5"><title>${x.d}: ${fmt(x.nw)}</title></circle>`).join('');
-  const dateLbls=`<text x="${toX(0).toFixed(1)}" y="${CH-6}" text-anchor="middle" font-size="10" fill="#9a9db8" font-family="Plus Jakarta Sans">${firstPt.d.slice(5)}</text><text x="${toX(nwByDate.length-1).toFixed(1)}" y="${CH-6}" text-anchor="middle" font-size="10" fill="#9a9db8" font-family="Plus Jakarta Sans">${lastPt.d.slice(5)}</text>`;
-  const deltaLbl=`<text x="${toX(nwByDate.length-1).toFixed(1)}" y="${PT-5}" text-anchor="end" font-size="11" fill="${deltaCol}" font-weight="700" font-family="Nunito Sans">${delta>=0?'+':''}${fmt(delta)}</text>`;
-  el.innerHTML=`<svg width="${CW}" height="${CH}" style="display:block"><polyline points="${pts}" fill="none" stroke="${deltaCol}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${dateLbls}${deltaLbl}</svg>`;
+  const delta=nwByDate[nwByDate.length-1].nw-nwByDate[0].nw;
+  const deltaCol=delta>=0?'#30a46c':'#e5484d';
+  const dots=nwByDate.map((x,i)=>`<circle cx="${toX(i).toFixed(1)}" cy="${toY(x.nw).toFixed(1)}" r="3" fill="${deltaCol}" stroke="white" stroke-width="1.5"><title>${x.d}: ${fmt(x.nw)}</title></circle>`).join('');
+  const lbls=nwByDate.length<=4?nwByDate.map((x,i)=>`<text x="${toX(i).toFixed(1)}" y="${CH-4}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${x.d.slice(5)}</text>`).join(''):
+    `<text x="${toX(0).toFixed(1)}" y="${CH-4}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${nwByDate[0].d.slice(5)}</text><text x="${toX(nwByDate.length-1).toFixed(1)}" y="${CH-4}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${nwByDate[nwByDate.length-1].d.slice(5)}</text>`;
+  const deltaLbl=`<text x="${toX(nwByDate.length-1).toFixed(1)}" y="${PT-4}" text-anchor="end" font-size="11" fill="${deltaCol}" font-weight="700" font-family="Nunito Sans">${delta>=0?'+':''}${Math.round(delta/1000)}k</text>`;
+  el.innerHTML=`<svg width="${CW}" height="${CH}" style="display:block"><polyline points="${pts}" fill="none" stroke="${deltaCol}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${lbls}${deltaLbl}</svg>`;
 }
 
 function renderSavingsRateChart(){
@@ -714,115 +674,100 @@ function renderSavingsRateChart(){
   const months=[];
   for(let m=1;m<=12;m++){if(yr===now.getFullYear()&&new Date(yr,m-1,1)>now)break;months.push(m);}
   const rates=months.map(m=>{
-    const mInc=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+t.amount,0);
-    const mExp=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+Math.abs(t.amount),0);
-    return mInc>0?Math.round((mInc-mExp)/mInc*100):null;
+    const mI=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+t.amount,0);
+    const mE=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()+1===m).reduce((s,t)=>s+Math.abs(t.amount),0);
+    return mI>0?Math.round((mI-mE)/mI*100):null;
   });
-  if(!rates.some(r=>r!==null)){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:12px 0">No data yet</div>';return;}
-  const CW=el.clientWidth||300,CH=80,PL=8,PR=8,PT=10,PB=20,IW=CW-PL-PR,IH=CH-PT-PB,n=months.length;
-  const validRates=rates.filter(r=>r!==null);
-  const maxR=Math.max(...validRates,20),minR=Math.min(...validRates,0);
-  const range=maxR-minR||1;
+  if(!rates.some(r=>r!==null)){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No data yet</div>';return;}
+  const CW=el.clientWidth||300,CH=100,PL=8,PR=8,PT=20,PB=24,IW=CW-PL-PR,IH=CH-PT-PB,n=months.length;
+  const validR=rates.filter(r=>r!==null);
+  const maxR=Math.max(...validR,20),minR=Math.min(...validR,0),range=maxR-minR||1;
   const toX=i=>PL+i/(n-1)*IW;
   const toY=v=>PT+IH-(v-minR)/range*IH;
-  const pts=rates.map((r,i)=>r!==null?`${toX(i).toFixed(1)},${toY(r).toFixed(1)}`:null).filter(Boolean).join(' ');
-  const dots=rates.map((r,i)=>r!==null?`<circle cx="${toX(i).toFixed(1)}" cy="${toY(r).toFixed(1)}" r="3" fill="var(--accent)" stroke="white" stroke-width="1.5"><title>${MONTHS_S[months[i]-1]}: ${r}%</title></circle>`:'' ).join('');
-  const lbls=months.map((_,i)=>`<text x="${toX(i).toFixed(1)}" y="${CH-4}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${MONTHS_S[months[i]-1]}</text>`).join('');
   const zeroPx=toY(0);
+  const pts=rates.map((r,i)=>r!==null?`${toX(i).toFixed(1)},${toY(r).toFixed(1)}`:null).filter(Boolean).join(' ');
+  const dots=rates.map((r,i)=>r!==null?`<circle cx="${toX(i).toFixed(1)}" cy="${toY(r).toFixed(1)}" r="3" fill="var(--accent)" stroke="white" stroke-width="1.5"><title>${MONTHS_S[months[i]-1]}: ${r}%</title></circle><text x="${toX(i).toFixed(1)}" y="${(toY(r)-6).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--accent)" font-weight="700" font-family="Nunito Sans">${r}%</text>`:''  ).join('');
+  const lbls=months.map((_,i)=>`<text x="${toX(i).toFixed(1)}" y="${CH-4}" text-anchor="middle" font-size="9" fill="#9a9db8" font-family="Plus Jakarta Sans">${MONTHS_S[months[i]-1]}</text>`).join('');
   el.innerHTML=`<svg width="${CW}" height="${CH}" style="display:block"><line x1="${PL}" y1="${zeroPx.toFixed(1)}" x2="${PL+IW}" y2="${zeroPx.toFixed(1)}" stroke="#e4e6ef" stroke-width="1" stroke-dasharray="3,3"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${lbls}</svg>`;
 }
 
 function renderAccountEvolutionChart(){
   const el=document.getElementById('acc-evolution-chart');if(!el)return;
-  if(!S.accounts.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📊</div>Log account balances to see evolution.</div>';return;}
-  // Group account names
-  const SAVINGS_ACCOUNTS=['carlota savings','martim savings','c&m savings','savings'];
-  const INVEST_ACCOUNTS=['investments','investment','trading','degiro','myinvestor'];
-  const groupOf=name=>{const n=name.toLowerCase();if(INVEST_ACCOUNTS.some(k=>n.includes(k)))return'invest';if(SAVINGS_ACCOUNTS.some(k=>n.includes(k)))return'savings';return'other';};
-  const allNames=[...new Set(S.accounts.map(a=>a.name))];
-  const savingsNames=allNames.filter(n=>groupOf(n)==='savings');
-  const investNames=allNames.filter(n=>groupOf(n)==='invest');
-  const relevantNames=[...savingsNames,...investNames];
-  if(!relevantNames.length){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:12px 0">No savings or investment accounts found. Name accounts with "Savings" or "Investments".</div>';return;}
-  // Get sorted unique dates
-  const dates=[...new Set(S.accounts.filter(a=>relevantNames.includes(a.name)).map(a=>a.date?.split('T')[0]))].filter(Boolean).sort();
+  // Filter from 26 Sep 2026 onwards
+  const cutoff='2026-09-26';
+  const filtered=S.accounts.filter(a=>a.date?.split('T')[0]>=cutoff);
+  if(!filtered.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📊</div>Log account balances to see evolution.</div>';return;}
+  const SAVINGS=['c&m savings','martim savings','carlota savings'];
+  const INVEST=['investments','investment'];
+  const groupOf=n=>{const nl=n.toLowerCase();if(INVEST.some(k=>nl.includes(k)))return'invest';if(nl.includes('savings'))return'savings';return'personal';};
+  const colorOf=n=>{const nl=n.toLowerCase();if(nl.includes('invest'))return'#1baf7a';if(nl.includes('c&m sav')||nl.includes('joint sav'))return'#1d6fa8';if(nl.includes('martim sav'))return'#4a9fd4';if(nl.includes('carlota sav'))return'#8ec8f0';return'#e07b2a';};
+  const allNames=[...new Set(filtered.map(a=>a.name))];
+  // Order: personal first (bottom), then savings (C&M, Martim, Carlota), then investments (top)
+  const ordered=[
+    ...allNames.filter(n=>groupOf(n)==='personal'),
+    ...allNames.filter(n=>n.toLowerCase().includes('c&m sav')||n.toLowerCase().includes('joint sav')),
+    ...allNames.filter(n=>n.toLowerCase().includes('martim sav')),
+    ...allNames.filter(n=>n.toLowerCase().includes('carlota sav')),
+    ...allNames.filter(n=>n.toLowerCase().includes('savings')&&!n.toLowerCase().includes('c&m sav')&&!n.toLowerCase().includes('martim sav')&&!n.toLowerCase().includes('carlota sav')&&!n.toLowerCase().includes('joint sav')),
+    ...allNames.filter(n=>groupOf(n)==='invest')
+  ].filter((v,i,a)=>a.indexOf(v)===i);
+  const dates=[...new Set(filtered.map(a=>a.date?.split('T')[0]))].filter(Boolean).sort();
   if(!dates.length){el.innerHTML='<div style="font-size:12px;color:var(--t3)">No snapshot data</div>';return;}
-  // For each date, get latest known balance per account
-  const getBalance=(name,upToDate)=>{const snaps=S.accounts.filter(a=>a.name===name&&a.date?.split('T')[0]<=upToDate).sort((a,b)=>new Date(b.date)-new Date(a.date));return snaps.length?parseFloat(snaps[0].balance||0):0;};
-  // Colors: savings = blue tones, invest = teal
-  const SAVINGS_COLORS=['#1d6fa8','#4a9fd4','#8ec8f0'];
-  const INVEST_COLOR='#1baf7a';
-  const datasets=[];
-  savingsNames.forEach((name,i)=>{
-    const balances=dates.map(d=>Math.round(getBalance(name,d)/1000*10)/10);
-    datasets.push({name,balances,color:SAVINGS_COLORS[i%SAVINGS_COLORS.length],group:'savings'});
-  });
-  investNames.forEach(name=>{
-    const balances=dates.map(d=>Math.round(getBalance(name,d)/1000*10)/10);
-    datasets.push({name,balances,color:INVEST_COLOR,group:'invest'});
-  });
-  const totals=dates.map((_,di)=>Math.round(datasets.reduce((s,ds)=>s+ds.balances[di],0)*10)/10);
-  // Build SVG bar chart
-  const CW=el.clientWidth||500,CH=260,PL=8,PR=8,PT=36,PB=28,IW=CW-PL-PR,IH=CH-PT-PB;
-  const n=dates.length;
-  if(n===0)return;
-  const maxTotal=Math.max(...totals,1);
+  const getB=(name,upTo)=>{const snaps=filtered.filter(a=>a.name===name&&a.date?.split('T')[0]<=upTo).sort((a,b)=>new Date(b.date)-new Date(a.date));return snaps.length?Math.round(parseFloat(snaps[0].balance||0)):0;};
+  const datasets=ordered.map(name=>({name,color:colorOf(name),balances:dates.map(d=>getB(name,d))}));
+  const totals=dates.map((_,di)=>datasets.reduce((s,ds)=>s+ds.balances[di],0));
+  const CW=el.clientWidth||460,CH=el.parentElement?.clientHeight-80||260;
+  const PL=8,PR=8,PT=36,PB=28,IW=CW-PL-PR,IH=CH-PT-PB,n=dates.length;
+  if(!n)return;
+  const maxTot=Math.max(...totals,1);
   const slotW=IW/n;
-  const barW=Math.max(Math.min(slotW*0.65,48),8);
+  const barW=Math.max(Math.min(slotW*.7,52),10);
   const px=i=>PL+i*slotW+slotW/2;
-  const toH=v=>v/maxTotal*IH;
+  const toH=v=>v/maxTot*IH;
   let svgBars='';
   dates.forEach((d,di)=>{
     let yBottom=PT+IH;
     datasets.forEach(ds=>{
       const val=ds.balances[di];if(!val)return;
-      const h=toH(val);
-      yBottom-=h;
+      const h=toH(val);yBottom-=h;
       const x=(px(di)-barW/2).toFixed(1);
-      svgBars+=`<rect x="${x}" y="${yBottom.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" fill="${ds.color}" rx="2"><title>${ds.name}: ${val}k</title></rect>`;
-      // Inside label if bar tall enough
-      if(h>=18){svgBars+=`<text x="${px(di).toFixed(1)}" y="${(yBottom+h/2+4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.92)" font-family="Nunito Sans">${val}</text>`;}
+      svgBars+=`<rect x="${x}" y="${yBottom.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" fill="${ds.color}"><title>${ds.name}: ${val}</title></rect>`;
+      if(h>=16)svgBars+=`<text x="${px(di).toFixed(1)}" y="${(yBottom+h/2+4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.93)" font-family="Nunito Sans">${Math.round(val/1000)}k</text>`;
     });
-    // Total on top
     const tot=totals[di];
     const topY=(PT+IH-toH(tot)-10).toFixed(1);
-    svgBars+=`<text x="${px(di).toFixed(1)}" y="${topY}" text-anchor="middle" font-size="14" font-weight="800" fill="var(--text)" font-family="Nunito Sans">${tot}</text>`;
-    // Date label
+    svgBars+=`<text x="${px(di).toFixed(1)}" y="${topY}" text-anchor="middle" font-size="15" font-weight="800" fill="var(--text)" font-family="Nunito Sans">${Math.round(tot/1000)}</text>`;
     svgBars+=`<text x="${px(di).toFixed(1)}" y="${CH-6}" text-anchor="middle" font-size="10" fill="#9a9db8" font-family="Plus Jakarta Sans">${d.slice(5)}</text>`;
   });
-  // Legend
-  const legendItems=[...savingsNames.map((n,i)=>`<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:2px;background:${SAVINGS_COLORS[i%SAVINGS_COLORS.length]};display:inline-block"></span>${n}</span>`),...investNames.map(n=>`<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:2px;background:${INVEST_COLOR};display:inline-block"></span>${n}</span>`)].join('');
-  el.innerHTML=`<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px">${legendItems}</div><svg width="${CW}" height="${CH}" style="display:block">${svgBars}</svg>`;
+  const legendItems=ordered.map(n=>`<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:9px;height:9px;border-radius:2px;background:${colorOf(n)};display:inline-block"></span>${n}</span>`).join('');
+  el.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">${legendItems}</div><svg width="${CW}" height="${CH}" style="display:block">${svgBars}</svg>`;
 }
 
 async function renderAIAnalysis(){
   const el=document.getElementById('ai-analysis');if(!el)return;
-  el.innerHTML='<div style="font-size:13px;color:var(--t3);padding:8px 0">Analysing your financial data...</div>';
+  el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:4px 0">Analysing...</div>';
   try{
-    const latest={};S.accounts.forEach(a=>{if(!latest[a.name]||new Date(a.date)>new Date(latest[a.name].date))latest[a.name]=a;});
+    const latest=getLatestBalances();
     const netWorth=Object.values(latest).reduce((s,a)=>s+parseFloat(a.balance||0),0);
     const ytdInc=S.transactions.filter(t=>!t.ignored&&t.type==='income'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+t.amount,0);
     const ytdExp=S.transactions.filter(t=>!t.ignored&&t.type==='expense'&&new Date(t.date).getFullYear()===viewYear).reduce((s,t)=>s+Math.abs(t.amount),0);
     const activeMos=Math.max(new Set(S.transactions.filter(t=>!t.ignored&&new Date(t.date).getFullYear()===viewYear).map(t=>new Date(t.date).getMonth()+1)).size,1);
     const savRate=ytdInc>0?Math.round((ytdInc-ytdExp)/ytdInc*100):0;
-    const avgMoSav=(ytdInc-ytdExp)/activeMos;
+    const avgMoSav=Math.round((ytdInc-ytdExp)/activeMos);
     const accountSummary=Object.entries(latest).map(([k,v])=>`${k}: €${Math.round(parseFloat(v.balance||0))}`).join(', ');
-    const snapshotDates=[...new Set(S.accounts.map(a=>a.date?.split('T')[0]))].filter(Boolean).sort();
-    const prompt=`You are a personal finance advisor. Analyse this financial snapshot and give a concise 3-4 sentence plain-language insight focusing on trends, strengths, and one actionable suggestion. Be direct and specific, no fluff.
+    const prompt=`You are a personal finance advisor. Give 3 executive bullet points (max 15 words each) on this financial data. Format as: "↑ Growth: ...", "~ Rate: ...", "→ Action: ...". Be specific with numbers. No fluff.
 
-Data for ${viewYear}:
-- Net worth: €${Math.round(netWorth)}
-- Accounts: ${accountSummary}
-- YTD Income: €${Math.round(ytdInc)}, Expenses: €${Math.round(ytdExp)}
-- Savings rate: ${savRate}%, Avg monthly savings: €${Math.round(avgMoSav)}
-- Months of data: ${activeMos}
-- Snapshot dates logged: ${snapshotDates.length} (${snapshotDates[0]||'none'} to ${snapshotDates[snapshotDates.length-1]||'none'})
-
-Give the analysis in 3-4 sentences maximum. No bullet points. Plain language.`;
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+Net worth: €${Math.round(netWorth)} | Accounts: ${accountSummary} | YTD Income: €${Math.round(ytdInc)} | Expenses: €${Math.round(ytdExp)} | Savings rate: ${savRate}% | Avg monthly savings: €${avgMoSav} | Months: ${activeMos}`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
-    const text=data.content?.[0]?.text||'Unable to generate analysis.';
-    el.innerHTML=`<div style="font-size:13px;line-height:1.7;color:var(--t2);padding:12px 16px;background:var(--s2);border-radius:8px;border-left:3px solid var(--accent)">${text}</div><button class="btn btn-g btn-sm" style="margin-top:8px" onclick="renderAIAnalysis()">↻ Refresh</button>`;
+    const text=data.content?.[0]?.text||'';
+    const lines=text.split('\n').filter(l=>l.trim());
+    const bullets=lines.map(l=>{
+      const isGood=l.startsWith('↑');const isNeutral=l.startsWith('~');
+      const col=isGood?'var(--green)':isNeutral?'var(--amber)':'var(--accent)';
+      return`<div style="display:flex;gap:8px;font-size:12px;color:var(--t2);margin-bottom:4px"><span style="color:${col};font-weight:600;flex-shrink:0;min-width:60px">${l.split(':')[0]}</span><span>${l.split(':').slice(1).join(':').trim()}</span></div>`;
+    }).join('');
+    el.innerHTML=`${bullets}<button class="btn btn-g btn-sm" style="margin-top:8px" onclick="renderAIAnalysis()">↻ Refresh</button>`;
   }catch(e){el.innerHTML='<div style="font-size:12px;color:var(--t3)">Analysis unavailable.</div>';}
 }
 
