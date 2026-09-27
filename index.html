@@ -645,7 +645,7 @@ function renderGoals(){
 function renderNetWorthChart(){
   const el=document.getElementById('acc-chart');if(!el)return;
   // Filter snapshots from 26 Sep 2026 onwards
-  const cutoff='2026-09-26';
+  const cutoff='2026-09-25';
   const filtered=S.accounts.filter(a=>a.date?.split('T')[0]>=cutoff);
   if(!filtered.length){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Log account balances to see trend.</div>';return;}
   const allNames=[...new Set(filtered.map(a=>a.name))];
@@ -694,7 +694,7 @@ function renderSavingsRateChart(){
 function renderAccountEvolutionChart(){
   const el=document.getElementById('acc-evolution-chart');if(!el)return;
   // Filter from 26 Sep 2026 onwards
-  const cutoff='2026-09-26';
+  const cutoff='2026-09-25';
   const filtered=S.accounts.filter(a=>a.date?.split('T')[0]>=cutoff);
   if(!filtered.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div class="ei">📊</div>Log account balances to see evolution.</div>';return;}
   const SAVINGS=['c&m savings','martim savings','carlota savings'];
