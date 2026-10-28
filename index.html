@@ -435,8 +435,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div id="imp-info" style="font-size:13px;color:var(--t3);margin-bottom:10px;flex-shrink:0"></div>
     <div id="imp-stage" style="display:none;flex:1;min-height:0;flex-direction:column">
       <div id="imp-rows" style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:8px;height:calc(88vh - 200px)"></div>
-      <div style="margin-top:14px;display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-g" id="imp-rv" style="display:none;color:var(--accent);font-weight:700" onclick="qrOpenImport()">Review</button>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
+        <button class="btn btn-g" id="imp-rv" style="display:none;color:var(--accent);font-weight:700" onclick="qrOpenImport()">Review</button><button class="btn btn-g" id="imp-rv-all" style="display:none" onclick="qrOpenImport('all')">Review all</button>
         <button class="btn btn-p" id="imp-ok" style="display:none" onclick="confirmImport()">Import</button>
         <button class="btn btn-g" onclick="closeM('import')">Cancel</button>
       </div>
@@ -853,8 +853,8 @@ function splitMatch(r){if(r._type!=='income'||Math.abs(r.amount)<5)return;const 
 function impConf(r){return r._source==='settle'||r._source==='split'?r._confidence:r._transfer||r._source==='userrule'?100:(r._confidence||0);}
 // Quick review: one transaction at a time. Import mode writes into the staging selects (confirmImport unchanged); txn mode saves via saveTxn.
 let qr=null;
-function qrBtn(){const b=document.getElementById('imp-rv');if(!b)return;const n=pending.filter(r=>!r._isDupe&&!r._qr&&impConf(r)<90).length;b.style.display=n?'inline-flex':'none';b.textContent=`Review ${n} →`;}
-function qrOpenImport(rest){const toShow=pending.filter(r=>!r._isDupe);const items=toShow.map((r,i)=>({r,i})).filter(x=>!x.r._qr&&(rest?impConf(x.r)>=90:impConf(x.r)<90));if(!items.length)return;qr={mode:'import',rest:!!rest,items,k:0,q:'',hi:0,ign:false,rule:false,hist:[]};qrLoad();openM('qr');qrRender();}
+function qrBtn(){const b=document.getElementById('imp-rv');if(!b)return;const n=pending.filter(r=>!r._isDupe&&!r._qr&&impConf(r)<90).length;b.style.display=n?'inline-flex':'none';b.textContent=`Review ${n} →`;const a=document.getElementById('imp-rv-all'),na=pending.filter(r=>!r._isDupe&&!r._qr).length;if(a){a.style.display=na>n?'inline-flex':'none';a.textContent=`Review all ${na} →`;}}
+function qrOpenImport(rest){const toShow=pending.filter(r=>!r._isDupe);const items=toShow.map((r,i)=>({r,i})).filter(x=>!x.r._qr&&(rest==='all'||(rest?impConf(x.r)>=90:impConf(x.r)<90)));if(!items.length)return;qr={mode:'import',rest:!!rest,items,k:0,q:'',hi:0,ign:false,rule:false,hist:[]};qrLoad();openM('qr');qrRender();}
 // Review from a date: walk every non-ignored txn oldest-first (to flag charges); progress saved in settings 'review_progress' so the next run starts where this one stopped.
 function rvFromDefault(){const d=s=>{const x=new Date(s);x.setDate(x.getDate()+1);return x.toISOString().slice(0,10);};const rp=S.reviewProgress&&S.reviewProgress.date;if(rp)return d(rp);const fl=S.transactions.filter(t=>t.flagged).map(t=>String(t.date).slice(0,10)).sort().pop();if(fl)return d(fl);const x=new Date();x.setDate(x.getDate()-30);return x.toISOString().slice(0,10);}
 function rvFromCount(from){return S.transactions.filter(t=>!t.ignored&&String(t.date).slice(0,10)>=from).length;}
